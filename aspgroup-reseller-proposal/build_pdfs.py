@@ -184,7 +184,7 @@ def summary_story():
         ["Financing", "“Rate de la 40 €/lună” on each model",
          "Customers see their monthly payment and apply for financing online"],
         ["Customers", "Contact form and phone numbers",
-         "Buttons to ask for a price, book a test ride, value a trade-in, call or WhatsApp"],
+         "Buttons to ask for a price, book a test ride, reserve with a card deposit, value a trade-in, call or WhatsApp"],
         ["Showrooms", "The supplier's 4 showrooms", "Your showrooms, with map, hours and Google reviews"],
         ["Online shop", "Parts sold on a separate site", "Your own shop for parts, helmets and clothing, paid by card"],
         ["Used vehicles", "—", "A page for used vehicles and trade-ins"],
@@ -209,11 +209,13 @@ def summary_story():
 
 
 def concept_story():
-    img = Image(str(HERE / "sitemap.png"), width=CONTENT_W, height=CONTENT_W * 1286 / 1344)
+    from PIL import Image as PILImage
+    w, h = PILImage.open(HERE / "sitemap.png").size
+    img = Image(str(HERE / "sitemap.png"), width=CONTENT_W, height=CONTENT_W * h / w)
     return [
         P("Site concept", "h1"),
-        P("Visitors arrive from Google, Google Maps, ads or dealer listings. Every page gives them an easy "
-          "next step, and each request goes straight to the right showroom.", "lead"),
+        P("Visitors arrive from Google, Google Maps, ads or dealer listings. Every page gives them six easy "
+          "ways to buy or ask, and each request goes straight to the right showroom.", "lead"),
         img,
         PageBreak(),
     ]
@@ -266,13 +268,14 @@ def website_story():
                    "and use, and can compare up to 3 models side by side"],
         ["Prices", "Prices in euro and lei. The lei prices update by themselves every day"],
         ["Getting customers", "On every page: ask for a price, book a test ride, value a trade-in, apply for financing, "
-                              "call or WhatsApp. Each request goes straight to the right showroom by email"],
+                              "call or WhatsApp, plus a “call me back” button. Each request goes straight to the right showroom by email"],
         ["Financing", "A monthly payment calculator on every model. In the shop, customers can pay in instalments"],
         ["Reserve by card", "Customers reserve a vehicle in stock online with a card deposit you choose (e.g. €300), "
                             "then sign and pay the rest at your showroom: cash, card, transfer or financing"],
         ["Used vehicles", "A page for used vehicles and trade-ins"],
         ["Online shop", "Sell parts, accessories, helmets and clothing online. We set up to 2,000 products for you. "
-                        "Card payment, courier delivery (Fan Courier, Sameday, Cargus) and automatic invoices"],
+                        "Card, cash on delivery or interest-free instalments; delivery by courier (Fan Courier, Sameday, Cargus) "
+                        "or to easybox lockers; automatic invoices"],
         ["Languages", "Romanian and English"],
         ["Ready for Google", "Built so Google can read and rank it: fast on phones and easy for Google to understand"],
         ["Results you can see", "You can see how many people visit, where they come from and how many contact you"],
@@ -285,6 +288,46 @@ def website_story():
         P(f"Every feature we offer, in one build, live in {LIVE_WEEKS} weeks: "
           f"<b>{eur(WEBSITE_PRICE)}</b> instead of {eur(WEBSITE_NORMAL)}, paid when it is finished.", "lead"),
         grid(rows, [3.6 * cm, 13.4 * cm]),
+        PageBreak(),
+    ]
+
+
+def sales_story():
+    rows = [
+        ["What we add", "Why it sells more"],
+        ["Clear prices on every model, in euro and lei, plus “from €X/month”",
+         "Buyers compare price and monthly payment first. If they cannot see them, they leave for a dealer who shows them"],
+        ["“In stock, ready now” labels and a list of vehicles available immediately",
+         "Buyers want to ride this season, not wait for an order"],
+        ["Reserve online with a card deposit",
+         "Catches buyers the moment they decide, before they visit another dealer"],
+        ["Free test ride, booked in 2 clicks", "Many buyers decide only after riding the vehicle"],
+        ["“Call me back” button with a fast-response promise (e.g. 15 minutes, during opening hours)",
+         "Buyers often contact several dealers; the first one to answer has the best chance"],
+        ["Call and WhatsApp buttons always visible on phones",
+         "Most visitors browse on their phone, and many prefer to call or message rather than fill in a form"],
+        ["“Which ATV is right for me?”: 3 quick questions (use, budget, passengers)",
+         "Guides first-time buyers to the right model and turns them into a request"],
+        ["Trust on every page: authorized dealer badges, warranty, your own service, Google reviews, real photos of your team",
+         "People spend thousands only with a dealer they trust"],
+        ["Trade-in valuation", "Many buyers need to sell their old vehicle first"],
+        ["A page for farms and companies: leasing, invoice with VAT, work models",
+         "ATVs and UTVs are work tools for farms, forestry and hunting groups"],
+        ["A Rabla page for motorcycles",
+         "The government program lowers the price of a new motorcycle; ASP already promotes Royal Enfield through Rabla 2026"],
+        ["Shop options Romanians expect: cash on delivery, card, interest-free instalments, easybox lockers, "
+         "free delivery above a set amount",
+         "When their preferred payment or delivery option is missing, shoppers abandon the cart"],
+        ["Accessory packs suggested with each vehicle (winch, plough, top case)", "Raises the value of every sale"],
+        ["Automatic follow-ups: abandoned-cart reminders, a review request after each sale, seasonal offers by email",
+         "Brings back people who did not buy the first time, and grows your Google reviews"],
+        ["Ads tracking for Google and Facebook", "You can show ads again to people who visited but did not buy"],
+    ]
+    return [
+        P("Built to sell", "h1"),
+        P("Every feature below has one job: turn a visitor into a buyer. Each one is chosen for how people in "
+          "Romania buy ATVs, UTVs and motorcycles, and all are included in your price.", "lead"),
+        grid(rows, [7.6 * cm, 9.4 * cm]),
         PageBreak(),
     ]
 
@@ -454,7 +497,7 @@ def build_proposal(path):
         PageTemplate("inner", frames=[frame], onPage=inner_page),
     ])
     story = (cover_story() + summary_story() + concept_story() + process_story() + website_story()
-             + seo_story() + costs_story() + acceptance_story())
+             + sales_story() + seo_story() + costs_story() + acceptance_story())
     doc.build(story)
 
 
