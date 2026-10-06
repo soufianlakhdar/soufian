@@ -225,24 +225,24 @@ def process_story():
     steps = [
         ["Step", "What we do", "What you see and approve", "When"],
         ["1. Kick-off call", "We learn your business: brands, showrooms, best sellers, typical customers",
-         "You send us the items on the checklist", "Week 1"],
+         "You send us the items on the checklist", "Days 1–7"],
         ["2. Research and site map", "We study what Romanian buyers search for and what other dealers do, then plan "
-         "every page and how a visitor becomes a customer", "The list of pages, for your OK", "Weeks 1–2"],
+         "every page and how a visitor becomes a customer", "The list of pages, for your OK", "Days 1–14"],
         ["3. Wireframes", "Simple black-and-white sketches of the main pages (home, models, model page, shop, "
          "checkout), on phone and computer, showing what goes where", "The sketches; you comment and approve",
-         "Weeks 2–3"],
+         "Days 8–21"],
         ["4. Design in Figma", "The full-colour design with your logo, colours and real photos, plus a clickable "
          "prototype that works like the real site", "A link you open on your phone; 2 rounds of changes, then your OK",
-         "Weeks 3–5"],
+         "Days 15–35"],
         ["5. Build", "We build the site on a private test address: models, prices, shop, card payments, couriers, "
-         "invoices and the financing calculator", "The test link, plus a short update every week", "Weeks 5–10"],
+         "invoices and the financing calculator", "The test link, plus a short update every week", "Days 29–70"],
         ["6. Content", "We write the texts and load all models and shop products",
-         "You check prices and texts", "Weeks 6–10"],
+         "You check prices and texts", "Days 36–70"],
         ["7. Testing", "We test every page, form and payment on phones and computers, including a real test order",
-         "Your final check and OK", "Week 11"],
+         "Your final check and OK", "Days 71–77"],
         ["8. Launch", "The site goes live on your address and we connect it to Google, Google Maps and visitor stats; "
          "3 hours of training for your team", f"Your live website. You pay the {eur(WEBSITE_PRICE)}",
-         f"Week {LIVE_WEEKS}"],
+         f"Day {LIVE_WEEKS * 7}"],
         ["9. Grow", "Every month: Google work, site care and a simple report", "The monthly report",
          "From the next month"],
     ]
@@ -254,7 +254,7 @@ def process_story():
         Spacer(1, 0.3 * cm),
         P("<b>Figma</b> is the professional tool designers use. You do not need to install anything: you get a "
           "link, open it on your phone, and click through your future website as if it were live."),
-        P(f"The {LIVE_WEEKS} weeks start when we receive the items on the checklist (last page). If something "
+        P(f"The {LIVE_WEEKS * 7} days start when we receive the items on the checklist (last page). If something "
           "arrives late, launch moves by the same time.", "small"),
         PageBreak(),
     ]
