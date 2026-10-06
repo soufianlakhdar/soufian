@@ -1,12 +1,11 @@
-"""Build the client proposal and the deposit proforma invoice as print-ready A4 PDFs.
+"""Build the client proposal as a print-ready A4 PDF.
 
-Fill in DETAILS below (empty values print as yellow placeholders), then run:
+Optionally fill in DETAILS below (empty values stay blank), then run:
     python3 build_pdfs.py
 """
 from pathlib import Path
 
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_RIGHT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import cm
@@ -21,33 +20,18 @@ HERE = Path(__file__).parent
 
 # ---------------------------------------------------------------- details
 DETAILS = {
-    "agency_name": "",          # e.g. "Studio Name SRL"
-    "agency_address": "",
-    "agency_tax_id": "",        # VAT / CUI
-    "agency_reg_no": "",        # trade register number
-    "agency_contact": "",       # email · phone
-    "agency_bank": "",
-    "agency_iban": "",
-    "agency_swift": "",
-    "client_company": "",       # e.g. "Moto Dealer SRL"
-    "client_address": "",
-    "client_tax_id": "",        # CUI
-    "client_reg_no": "",        # J../..../....
-    "client_contact": "",       # contact person
-    "vat_rate": None,           # e.g. 21 or 0 (reverse charge); None = to be confirmed
+    "agency_name": "",          # printed on the signature page when set
+    "client_company": "",       # printed on the signature page when set
 }
 PROPOSAL_NO = "OF-2026-001"
-PROFORMA_NO = "PF-2026-001"
 ISSUE_DATE = "06.10.2026"
 VALID_UNTIL = "05.11.2026"
-DUE_DATE = "13.10.2026"
 
 # One complete package at a friend price (normal price shown as the anchor).
 WEBSITE_NORMAL, WEBSITE_PRICE = 5500, 1900
 SEO_NORMAL, SEO_PRICE = 900, 300
 CARE_PRICE = 60
 LIVE_WEEKS = 12
-DEPOSIT_SHARE, DESIGN_SHARE = 0.40, 0.30
 
 # ---------------------------------------------------------------- look
 FONT_DIR = Path("/usr/share/fonts/truetype/crosextra")
@@ -65,7 +49,6 @@ INK = colors.HexColor("#1D2433")
 MUTED = colors.HexColor("#5B6475")
 RULE = colors.HexColor("#D9DEE7")
 ZEBRA = colors.HexColor("#F6F8FB")
-PLACEHOLDER_BG = "#FFF1A8"
 
 PAGE_W, PAGE_H = A4
 MARGIN = 2 * cm
@@ -80,27 +63,11 @@ S = {
     "h1": ParagraphStyle("h1", fontName="Body-Bold", fontSize=20, leading=24, textColor=NAVY, spaceAfter=4),
     "lead": ParagraphStyle("lead", fontName="Body", fontSize=11.5, leading=16, textColor=MUTED, spaceAfter=12),
     "h2": ParagraphStyle("h2", fontName="Body-Bold", fontSize=13, leading=17, textColor=NAVY, spaceBefore=10, spaceAfter=6),
-    "right": ParagraphStyle("right", fontName="Body", fontSize=8.8, leading=11.2, textColor=INK, alignment=TA_RIGHT),
-    "rightb": ParagraphStyle("rightb", fontName="Body-Bold", fontSize=8.8, leading=11.2, textColor=INK, alignment=TA_RIGHT),
 }
 
 
-def ph(key, label):
-    """The configured value, or a highlighted placeholder to fill in."""
-    value = DETAILS.get(key)
-    if value:
-        return value
-    return f"<font backColor='{PLACEHOLDER_BG}'>&nbsp;[{label}]&nbsp;</font>"
-
-
-def eur(amount, cents=True):
-    return f"€{amount:,.2f}" if cents else f"€{amount:,.0f}"
-
-
-def schedule():
-    deposit = round(WEBSITE_PRICE * DEPOSIT_SHARE, 2)
-    design = round(WEBSITE_PRICE * DESIGN_SHARE, 2)
-    return deposit, design, round(WEBSITE_PRICE - deposit - design, 2)
+def eur(amount):
+    return f"€{amount:,.0f}"
 
 
 def P(text, style="body"):
@@ -141,12 +108,17 @@ def grid(rows, widths, header=True, first_col_bold=True, zebra=True, extra=()):
     return t
 
 
-# ================================================================ proposal
-def proposal_frame_pages(canvas, doc):
+def offer_box(rows, widths):
+    return grid(rows, widths, zebra=False, extra=[("BACKGROUND", (0, 1), (-1, -1), ACCENT_TINT),
+                                                  ("BOX", (0, 0), (-1, -1), 1, ACCENT)])
+
+
+# ================================================================ pages
+def inner_page(canvas, doc):
     canvas.saveState()
     canvas.setFont("Body", 8.5)
     canvas.setFillColor(MUTED)
-    canvas.drawString(MARGIN, PAGE_H - 1.25 * cm, "Website & SEO Proposal")
+    canvas.drawString(MARGIN, PAGE_H - 1.25 * cm, "Website & Google Proposal")
     canvas.drawRightString(PAGE_W - MARGIN, PAGE_H - 1.25 * cm, f"Proposal {PROPOSAL_NO}")
     canvas.setStrokeColor(RULE)
     canvas.setLineWidth(0.5)
@@ -157,7 +129,7 @@ def proposal_frame_pages(canvas, doc):
     canvas.restoreState()
 
 
-def proposal_cover(canvas, doc):
+def cover_page(canvas, doc):
     canvas.saveState()
     canvas.setFillColor(NAVY)
     canvas.rect(0, PAGE_H * 0.42, PAGE_W, PAGE_H * 0.58, stroke=0, fill=1)
@@ -170,13 +142,7 @@ def cover_story():
     title = ParagraphStyle("ct", fontName="Body-Bold", fontSize=34, leading=40, textColor=colors.white)
     sub = ParagraphStyle("cs", fontName="Body", fontSize=15, leading=21, textColor=colors.HexColor("#C9D6EA"))
     tag = ParagraphStyle("tag", fontName="Body-Bold", fontSize=10, leading=13, textColor=colors.HexColor("#8FB3F0"))
-    meta = [
-        ["Prepared for", ph("client_company", "Client company")],
-        ["Prepared by", ph("agency_name", "Your company name")],
-        ["Proposal no.", PROPOSAL_NO],
-        ["Date", ISSUE_DATE],
-        ["Valid until", VALID_UNTIL],
-    ]
+    meta = [["Proposal no.", PROPOSAL_NO], ["Date", ISSUE_DATE], ["Valid until", VALID_UNTIL]]
     meta_t = Table([[P(k, "cellb"), P(v, "cell")] for k, v in meta], colWidths=[3.5 * cm, 10 * cm])
     meta_t.setStyle(TableStyle([
         ("LINEBELOW", (0, 0), (-1, -1), 0.5, RULE),
@@ -187,12 +153,11 @@ def cover_story():
         Spacer(1, 4.2 * cm),
         Paragraph("PROPOSAL", tag),
         Spacer(1, 0.3 * cm),
-        Paragraph("Website & SEO for a<br/>powersports dealer in Romania", title),
+        Paragraph("Your new website<br/>and Google plan", title),
         Spacer(1, 0.5 * cm),
-        Paragraph("Design, build and Google visibility for a dealer "
-                  "of the ASP Group range: Polaris, Segway Powersports, TGB, Linhai, "
-                  "Indian Motorcycle, Royal Enfield and more.", sub),
-        Spacer(1, 6.3 * cm),
+        Paragraph("A website that sells directly to customers, for a dealer of Polaris, Segway Powersports, "
+                  "TGB, Linhai, Indian Motorcycle, Royal Enfield and more in Romania.", sub),
+        Spacer(1, 7.2 * cm),
         meta_t,
         NextPageTemplate("inner"),
         PageBreak(),
@@ -200,51 +165,42 @@ def cover_story():
 
 
 def summary_story():
-    deposit, _, _ = schedule()
-    offer = [
-        ["Your package", "Normal price", "Your price", "When"],
-        ["Complete website, every feature including the online shop",
-         f"<strike>{eur(WEBSITE_NORMAL, False)}</strike>", f"<b>{eur(WEBSITE_PRICE, False)}</b> one-off",
-         f"Live in {LIVE_WEEKS} weeks"],
-        ["Google plan (SEO), our best plan",
-         f"<strike>{eur(SEO_NORMAL, False)}/month</strike>", f"<b>{eur(SEO_PRICE, False)}/month</b>",
-         "From the month after launch"],
-        ["Hosting and care: we keep the site online, safe and up to date", "", f"<b>{eur(CARE_PRICE, False)}/month</b>",
-         "From launch"],
-    ]
-    offer_t = grid(offer, [7.0 * cm, 3.0 * cm, 3.4 * cm, 3.6 * cm], zebra=False,
-                   extra=[("BACKGROUND", (0, 1), (-1, -1), ACCENT_TINT),
-                          ("BOX", (0, 0), (-1, -1), 1, ACCENT)])
+    offer = offer_box([
+        ["Your package", "Normal price", "Your price", "When you pay"],
+        ["Complete website that sells to customers, with online shop",
+         f"<strike>{eur(WEBSITE_NORMAL)}</strike>", f"<b>{eur(WEBSITE_PRICE)}</b> one-off",
+         f"Once it is finished and live (week {LIVE_WEEKS})"],
+        ["Google plan (SEO), our best plan", f"<strike>{eur(SEO_NORMAL)}/month</strike>",
+         f"<b>{eur(SEO_PRICE)}/month</b>", "Monthly, from the month after launch"],
+        ["Hosting and care: we keep the site online, safe and up to date", "",
+         f"<b>{eur(CARE_PRICE)}/month</b>", "Monthly, from the month after launch"],
+    ], [6.6 * cm, 2.9 * cm, 3.2 * cm, 4.3 * cm])
     compare = [
-        ["Area", "What aspgroup.ro has", "What your site adds"],
-        ["Models", "All models by type (ATV, UTV, motorcycle) and brand, with photos and specs",
+        ["Area", "aspgroup.ro (the supplier)", "Your website (sells to customers)"],
+        ["Who it is for", "Presents the brands and recruits dealers", "Turns local buyers into your customers"],
+        ["Models", "All models by type and brand, with photos and specs",
          "Search by budget, engine size, number of seats and use (fun, farm, forest, kids)"],
         ["Prices", "Prices in euro and lei", "Lei prices update by themselves every day"],
         ["Financing", "“Rate de la 40 €/lună” on each model",
-         "Customers see their monthly payment and can apply for financing online"],
-        ["Offers", "A page with current offers", "Offer pages ready for Google and Facebook ads"],
+         "Customers see their monthly payment and apply for financing online"],
         ["Customers", "Contact form and phone numbers",
-         "Buttons to ask for a price, book a test ride, value a trade-in, call or WhatsApp. "
-         "You see which ones bring customers"],
-        ["Showrooms", "Their 4 showrooms listed", "A page for each of your showrooms with map, hours and Google reviews"],
-        ["Articles", "Company news", "Buying guides and comparisons that people in Romania search for"],
-        ["Parts and gear", "A separate shop (aspshop.ro)", "Your own online shop for parts, helmets and clothing"],
+         "Buttons to ask for a price, book a test ride, value a trade-in, call or WhatsApp"],
+        ["Showrooms", "The supplier's 4 showrooms", "Your showrooms, with map, hours and Google reviews"],
+        ["Online shop", "Parts sold on a separate site", "Your own shop for parts, helmets and clothing"],
         ["Used vehicles", "—", "A page for used vehicles and trade-ins"],
     ]
     return [
         P("Summary", "h1"),
-        P("One complete package, everything included, at a friend price: a website that sells the full "
-          "ASP Group range and has its own online shop, plus our best Google plan so local buyers find "
-          "you and call, book a test ride or ask for financing.", "lead"),
-        offer_t,
+        P("aspgroup.ro is the supplier's website: it presents the brands and serves dealers. We will build you "
+          "something different: a website that sells directly to customers (B2C), so people in your area find you "
+          "on Google and call, book a test ride, ask for financing or buy online.", "lead"),
+        offer,
         Spacer(1, 0.2 * cm),
-        P(f"You save {eur(WEBSITE_NORMAL - WEBSITE_PRICE, False)} on the website and "
-          f"{eur(SEO_NORMAL - SEO_PRICE, False)} every month on Google. To start: a 40% deposit of "
-          f"{eur(deposit, False)}. All prices in EUR, excluding VAT.", "small"),
-        P("Compared with aspgroup.ro", "h2"),
-        P("Your site keeps everything good about the importer's site and adds what a dealer needs to "
-          "win customers in your area."),
-        grid(compare, [2.9 * cm, 6.4 * cm, 7.7 * cm]),
+        P(f"Because you are a friend: everything included, no deposit, and you pay for the website only when it "
+          f"is finished. You save {eur(WEBSITE_NORMAL - WEBSITE_PRICE)} on the website and "
+          f"{eur(SEO_NORMAL - SEO_PRICE)} every month on Google. All prices in EUR, excluding VAT.", "small"),
+        P("Supplier site vs. your customer site", "h2"),
+        grid(compare, [2.9 * cm, 6.2 * cm, 7.9 * cm]),
         Spacer(1, 0.25 * cm),
         P("Important: we write your own texts instead of copying aspgroup.ro, because Google ignores copied "
           "pages. Photos come from ASP's dealer kit, with their OK.", "small"),
@@ -256,9 +212,48 @@ def concept_story():
     img = Image(str(HERE / "sitemap.png"), width=CONTENT_W, height=CONTENT_W * 1286 / 1344)
     return [
         P("Site concept", "h1"),
-        P("Visitors land on any page from search, maps, ads or dealer listings. Every page keeps the five "
-          "lead actions one tap away, and each lead is sent to the right showroom.", "lead"),
+        P("Visitors arrive from Google, Google Maps, ads or dealer listings. Every page gives them an easy "
+          "next step, and each request goes straight to the right showroom.", "lead"),
         img,
+        PageBreak(),
+    ]
+
+
+def process_story():
+    steps = [
+        ["Step", "What we do", "What you see and approve", "When"],
+        ["1. Kick-off call", "We learn your business: brands, showrooms, best sellers, typical customers",
+         "You send us the items on the checklist", "Week 1"],
+        ["2. Research and site map", "We study what Romanian buyers search for and what other dealers do, then plan "
+         "every page and how a visitor becomes a customer", "The list of pages, for your OK", "Weeks 1–2"],
+        ["3. Wireframes", "Simple black-and-white sketches of the main pages (home, models, model page, shop, "
+         "checkout), on phone and computer, showing what goes where", "The sketches; you comment and approve",
+         "Weeks 2–3"],
+        ["4. Design in Figma", "The full-colour design with your logo, colours and real photos, plus a clickable "
+         "prototype that works like the real site", "A link you open on your phone; 2 rounds of changes, then your OK",
+         "Weeks 3–5"],
+        ["5. Build", "We build the site on a private test address: models, prices, shop, card payments, couriers, "
+         "invoices and the financing calculator", "The test link, plus a short update every week", "Weeks 5–10"],
+        ["6. Content", "We write the texts and load all models and shop products",
+         "You check prices and texts", "Weeks 6–10"],
+        ["7. Testing", "We test every page, form and payment on phones and computers, including a real test order",
+         "Your final check and OK", "Week 11"],
+        ["8. Launch", "The site goes live on your address and we connect it to Google, Google Maps and visitor stats; "
+         "3 hours of training for your team", f"Your live website. You pay the {eur(WEBSITE_PRICE)}",
+         f"Week {LIVE_WEEKS}"],
+        ["9. Grow", "Every month: Google work, site care and a simple report", "The monthly report",
+         "From the next month"],
+    ]
+    return [
+        P("How we will build your website", "h1"),
+        P("We agree on the plan, the sketches and the design before we build anything. Changing a sketch takes "
+          "minutes; changing a finished website takes days. So there are no surprises and no wasted money.", "lead"),
+        grid(steps, [3.0 * cm, 6.8 * cm, 5.0 * cm, 2.2 * cm]),
+        Spacer(1, 0.3 * cm),
+        P("<b>Figma</b> is the professional tool designers use. You do not need to install anything: you get a "
+          "link, open it on your phone, and click through your future website as if it were live."),
+        P(f"The {LIVE_WEEKS} weeks start when we receive the items on the checklist (last page). If something "
+          "arrives late, launch moves by the same time.", "small"),
         PageBreak(),
     ]
 
@@ -266,7 +261,7 @@ def concept_story():
 def website_story():
     rows = [
         ["Part", "What you get"],
-        ["Design", "A design made for your brand. You see it first and can ask for changes twice before we build"],
+        ["Design", "A design made for your brand, approved by you before we build"],
         ["Models", "Every model you sell, sorted by type and brand. Customers search by budget, engine size, seats "
                    "and use, and can compare up to 3 models side by side"],
         ["Prices", "Prices in euro and lei. The lei prices update by themselves every day"],
@@ -286,7 +281,7 @@ def website_story():
     return [
         P("What the website includes", "h1"),
         P(f"Every feature we offer, in one build, live in {LIVE_WEEKS} weeks: "
-          f"<b>{eur(WEBSITE_PRICE, False)}</b> one-off instead of {eur(WEBSITE_NORMAL, False)}.", "lead"),
+          f"<b>{eur(WEBSITE_PRICE)}</b> instead of {eur(WEBSITE_NORMAL)}, paid when it is finished.", "lead"),
         grid(rows, [3.6 * cm, 13.4 * cm]),
         PageBreak(),
     ]
@@ -295,7 +290,7 @@ def website_story():
 def seo_story():
     competitors = [
         ["Who you compete with", "How they get customers from Google", "How you beat them"],
-        ["aspgroup.ro (the importer)", "Official pages for every model, plus paid Google ads",
+        ["aspgroup.ro (the supplier)", "Official pages for every model, plus paid Google ads",
          "Your own texts (Google ignores copies), and a link from ASP's dealer page to your site"],
         ["ATVRom", "A separate website for each city (Bucharest, Brașov, Iași, Timișoara and more)",
          "Strong pages for your own area, plus Google Maps reviews from your customers"],
@@ -335,7 +330,7 @@ def seo_story():
     ]
     return [
         P("Your chance on Google", "h1"),
-        P("When someone in Romania wants an ATV or a motorcycle, they search on Google. The importer and the "
+        P("When someone in Romania wants an ATV or a motorcycle, they search on Google. The supplier and the "
           "big dealer networks show up for the general searches. But searches for a specific model, or for a dealer "
           "in your city, are still easy to win, and those people are ready to buy.", "lead"),
         grid(competitors, [3.6 * cm, 6.4 * cm, 7.0 * cm]),
@@ -346,8 +341,8 @@ def seo_story():
         PageBreak(),
         P("What the Google plan (SEO) includes", "h1"),
         P("SEO means getting your website onto the first page of Google when people search for what you sell, "
-          f"without paying for each click. Our best plan: <b>{eur(SEO_PRICE, False)}/month</b> instead of "
-          f"{eur(SEO_NORMAL, False)}. It starts the month after launch, for at least 6 months, with no extra costs.", "lead"),
+          f"without paying for each click. Our best plan: <b>{eur(SEO_PRICE)}/month</b> instead of "
+          f"{eur(SEO_NORMAL)}. It starts the month after launch, for at least 6 months, with no extra costs.", "lead"),
         grid(plan, [3.6 * cm, 13.4 * cm]),
         P("What to expect", "h2"),
         grid(expect, [2.7 * cm, 14.3 * cm], header=False),
@@ -359,11 +354,10 @@ def seo_story():
 
 
 def costs_story():
-    deposit, design, launch = schedule()
     costs = [
         ["Item", "Price (EUR, excl. VAT)", "Notes"],
         ["Hosting and care: we keep the site online, safe, backed up and up to date, plus 1 hour of small "
-         "changes per month", f"{eur(CARE_PRICE, False)}/month", "Needed unless you have your own technical team"],
+         "changes per month", f"{eur(CARE_PRICE)}/month", "Needed unless you have your own technical team"],
         ["Website address (.ro domain)", "About €10/year", "Registered in your company's name"],
         ["Card payment fees", "A small % per sale", "Paid to the payment company, e.g. Netopia or Stripe"],
         ["Model texts written before launch", "€15 per model", "After launch, the Google plan writes 12 per month"],
@@ -374,20 +368,19 @@ def costs_story():
         ["Extra work not in the package", "€25/hour", "Always priced and agreed before we start"],
     ]
     terms = [
-        f"The website is paid in three parts: 40% to start ({eur(deposit, False)}), 30% when you approve the "
-        f"design ({eur(design, False)}) and 30% when the site goes live ({eur(launch, False)}).",
+        f"No deposit: you pay the website ({eur(WEBSITE_PRICE)}) once it is finished and live.",
+        "The Google plan and hosting are paid monthly, starting the month after launch. The Google plan runs at "
+        "least 6 months.",
         f"This friend price is valid until {VALID_UNTIL}.",
         "Prices are in EUR, excluding VAT. You can also pay in lei at the National Bank (BNR) rate on the invoice date.",
-        "The Google plan and hosting are paid monthly, starting the month after launch. The Google plan runs at least 6 months.",
         "You can ask for design changes twice. Anything extra costs €25/hour and is always agreed first.",
-        "The 12 weeks start when we receive the items on the checklist. If something arrives late, launch moves by the same time.",
-        "Once fully paid, the website, its design and its texts are 100% yours, and every account is in your company's name.",
+        "Once paid, the website, its design and its texts are 100% yours, and every account is in your company's name.",
         "We provide the legal pages (terms, privacy, cookies, returns) as templates; your lawyer should approve them.",
         "Brand logos and photos follow each brand's rules for dealers and need ASP's OK before launch.",
     ]
     return [
-        P("Running costs and add-ons", "h1"),
-        P(f"After launch the site costs {eur(CARE_PRICE, False)} a month plus the domain; the add-ons are optional.", "lead"),
+        P("Running costs and payment", "h1"),
+        P(f"After launch the site costs {eur(CARE_PRICE)} a month plus the domain; the extras are optional.", "lead"),
         grid(costs, [7.4 * cm, 4.6 * cm, 5.0 * cm]),
         P("Payment terms", "h2"),
         *[P(f"•&nbsp;&nbsp;{t}") for t in terms],
@@ -395,25 +388,8 @@ def costs_story():
     ]
 
 
-def process_story():
-    deposit, design, launch = schedule()
-    steps = [
-        ["Step", "What happens", "Who", "When", "Payment"],
-        ["1. Accept", "You sign the acceptance page", "You", "Week 0", "—"],
-        ["2. Deposit", "We send a proforma invoice for the deposit", "Both", "Week 0", f"40%: {eur(deposit, False)}"],
-        ["3. Start", "We study what your customers search for and plan the pages; you send us the items below",
-         "Both", "Weeks 1–2", "—"],
-        ["4. Design", "We show you the design; you ask for changes (twice) and approve it", "Us, then you", "Weeks 2–4",
-         f"30%: {eur(design, False)}"],
-        ["5. Build", "We build the site, add your models and set up the shop", "Us", "Weeks 4–11", "—"],
-        ["6. Test", "We test everything on phones and computers; you check it too", "Both", "Week 11", "—"],
-        ["7. Launch", "The site goes live and we connect it to Google and Google Maps", "Us", f"Week {LIVE_WEEKS}",
-         f"30%: {eur(launch, False)}"],
-        ["8. Grow", "Every month: Google work, site care and a simple report", "Us", "From the next month",
-         f"{eur(SEO_PRICE + CARE_PRICE, False)}/month"],
-    ]
+def acceptance_story():
     needs = [
-        "The signed acceptance page and the deposit payment",
         "Company details: legal name, CUI, Trade Register number and registered address",
         "The website address you want (we can help you choose and register one)",
         "Your logo and brand colours, if you have them",
@@ -426,35 +402,17 @@ def process_story():
         "we help you open them",
     ]
     box = "<font color='#2F6FDE'>□</font>"
-    return [
-        P("How we work, step by step", "h1"),
-        P(f"Eight steps from signature to a site that brings in leads, live in week {LIVE_WEEKS}.", "lead"),
-        grid(steps, [2.2 * cm, 7.5 * cm, 2.2 * cm, 2.6 * cm, 2.5 * cm]),
-        P("What we need from you to start", "h2"),
-        *[P(f"{box}&nbsp;&nbsp;{n}") for n in needs],
-        PageBreak(),
-    ]
-
-
-def acceptance_story():
-    deposit, _, _ = schedule()
-    accepted = grid([
+    accepted = offer_box([
         ["What you accept", "Price"],
-        [f"Complete website, every feature including the online shop, live in {LIVE_WEEKS} weeks",
-         f"<b>{eur(WEBSITE_PRICE, False)}</b> one-off"],
-        ["Google plan (SEO), our best plan, for at least 6 months", f"<b>{eur(SEO_PRICE, False)}/month</b>"],
-        ["Hosting and care", f"<b>{eur(CARE_PRICE, False)}/month</b>"],
-    ], [12.0 * cm, 5.0 * cm], first_col_bold=False, zebra=False,
-        extra=[("BACKGROUND", (0, 1), (-1, -1), ACCENT_TINT), ("BOX", (0, 0), (-1, -1), 1, ACCENT)])
+        [f"Complete website that sells to customers, with online shop, live in {LIVE_WEEKS} weeks, "
+         "paid when finished", f"<b>{eur(WEBSITE_PRICE)}</b> one-off"],
+        ["Google plan (SEO), our best plan, for at least 6 months", f"<b>{eur(SEO_PRICE)}/month</b>"],
+        ["Hosting and care", f"<b>{eur(CARE_PRICE)}/month</b>"],
+    ], [12.0 * cm, 5.0 * cm])
 
     def sign_block(title, company):
-        rows = [
-            [P(f"<b>{title}</b>", "cell")],
-            [P(f"Company: {company}", "cell")],
-            [P("Name and role:", "cell")],
-            [P("Signature:", "cell")],
-            [P("Date:", "cell")],
-        ]
+        rows = [[P(f"<b>{title}</b>", "cell")], [P(f"Company: {company}", "cell")], [P("Name:", "cell")],
+                [P("Signature:", "cell")], [P("Date:", "cell")]]
         t = Table(rows, colWidths=[8.2 * cm], rowHeights=[0.8 * cm, 0.9 * cm, 0.9 * cm, 1.6 * cm, 0.9 * cm])
         t.setStyle(TableStyle([
             ("BOX", (0, 0), (-1, -1), 0.75, RULE),
@@ -465,177 +423,39 @@ def acceptance_story():
         ]))
         return t
 
-    signs = Table([[sign_block("Client", ph("client_company", "Client company")),
-                    sign_block("Agency", ph("agency_name", "Your company name"))]],
-                  colWidths=[8.5 * cm, 8.5 * cm])
+    signs = Table([[sign_block("Client", DETAILS["client_company"]),
+                    sign_block("Agency", DETAILS["agency_name"])]], colWidths=[8.5 * cm, 8.5 * cm])
     signs.setStyle(TableStyle([("LEFTPADDING", (0, 0), (-1, -1), 0), ("VALIGN", (0, 0), (-1, -1), "TOP")]))
     return [
-        P("Acceptance", "h1"),
-        P(f"Sign below to accept proposal {PROPOSAL_NO}. We then send the proforma invoice for the "
-          f"{eur(deposit, False)} deposit and book the kickoff.", "lead"),
+        P("What we need from you to start", "h1"),
+        P("Send us these and we start the same week.", "lead"),
+        *[P(f"{box}&nbsp;&nbsp;{n}") for n in needs],
+        P("Acceptance", "h2"),
         accepted,
-        Spacer(1, 0.4 * cm),
+        Spacer(1, 0.3 * cm),
         P("By signing, both parties accept the scope, prices and terms in this proposal. "
           "All prices in EUR, excluding VAT.", "small"),
-        Spacer(1, 0.6 * cm),
+        Spacer(1, 0.4 * cm),
         KeepTogether(signs),
-        Spacer(1, 0.8 * cm),
-        P("Sources", "h2"),
-        P("aspgroup.ro (home, despre-noi, devino-dealer, promotii, Linhai 110 and Rabla 2026 pages); atvrom.ro and its "
-          "city sites; motoclass.ro; atv-mag.ro; atv-vanzari.ro; polarisofficial.ro/dealeri-polaris; aspgroup.olx.ro; "
-          "Romanian 2026 price guides from ddc.ro, instatic.ro, aurelcirlan.ro and trifumedia.com; ANPC Order 449/2022 "
-          "(SAL/SOL badges); Law 232/2022 on accessibility. Checked on 6 October 2026.", "small"),
     ]
 
 
 def build_proposal(path):
     doc = BaseDocTemplate(str(path), pagesize=A4, leftMargin=MARGIN, rightMargin=MARGIN,
                           topMargin=2 * cm, bottomMargin=2 * cm,
-                          title="Website & SEO Proposal", author=DETAILS["agency_name"] or "Proposal",
+                          title="Your new website and Google plan", author=DETAILS["agency_name"] or "Proposal",
                           subject=f"Proposal {PROPOSAL_NO}")
     frame = Frame(MARGIN, 2 * cm, CONTENT_W, PAGE_H - 4 * cm, id="f", leftPadding=0, rightPadding=0,
                   topPadding=0, bottomPadding=0)
     doc.addPageTemplates([
-        PageTemplate("cover", frames=[frame], onPage=proposal_cover),
-        PageTemplate("inner", frames=[frame], onPage=proposal_frame_pages),
+        PageTemplate("cover", frames=[frame], onPage=cover_page),
+        PageTemplate("inner", frames=[frame], onPage=inner_page),
     ])
-    story = (cover_story() + summary_story() + concept_story() + website_story() + seo_story()
-             + costs_story() + process_story() + acceptance_story())
-    doc.build(story)
-
-
-# ================================================================ proforma
-def build_proforma(path):
-    deposit, design_part, launch_part = schedule()
-    vat_rate = DETAILS["vat_rate"]
-
-    def page(canvas, doc):
-        canvas.saveState()
-        canvas.setFillColor(NAVY)
-        canvas.rect(0, PAGE_H - 0.5 * cm, PAGE_W, 0.5 * cm, stroke=0, fill=1)
-        canvas.setFont("Body", 8.5)
-        canvas.setFillColor(MUTED)
-        canvas.drawString(MARGIN, 1.0 * cm, f"Proforma {PROFORMA_NO} · Proposal {PROPOSAL_NO}")
-        canvas.drawRightString(PAGE_W - MARGIN, 1.0 * cm, "Page 1 of 1")
-        canvas.restoreState()
-
-    doc = BaseDocTemplate(str(path), pagesize=A4, leftMargin=MARGIN, rightMargin=MARGIN,
-                          topMargin=1.6 * cm, bottomMargin=1.8 * cm,
-                          title=f"Proforma invoice {PROFORMA_NO}", author=DETAILS["agency_name"] or "Proforma",
-                          subject="Website deposit")
-    frame = Frame(MARGIN, 1.8 * cm, CONTENT_W, PAGE_H - 3.4 * cm, leftPadding=0, rightPadding=0,
-                  topPadding=0, bottomPadding=0)
-    doc.addPageTemplates([PageTemplate("p", frames=[frame], onPage=page)])
-
-    title = ParagraphStyle("t", fontName="Body-Bold", fontSize=22, leading=26, textColor=NAVY)
-    title_ro = ParagraphStyle("tr", fontName="Body", fontSize=12, leading=15, textColor=MUTED)
-    agency = ParagraphStyle("ag", fontName="Body-Bold", fontSize=13, leading=16, textColor=INK, alignment=TA_RIGHT)
-
-    head = Table([[
-        [Paragraph("PROFORMA INVOICE", title), Paragraph("Factură proformă", title_ro)],
-        [Paragraph(ph("agency_name", "Your company name"), agency)],
-    ]], colWidths=[9 * cm, 8 * cm])
-    head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                              ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
-
-    meta = Table([[P("<b>No. / Nr.</b>", "cell"), P(PROFORMA_NO, "cell"),
-                   P("<b>Issue date / Data emiterii</b>", "cell"), P(ISSUE_DATE, "cell")],
-                  [P("<b>Reference / Referință</b>", "cell"), P(f"Proposal {PROPOSAL_NO}", "cell"),
-                   P("<b>Due date / Scadență</b>", "cell"), P(DUE_DATE, "cell")],
-                  [P("<b>Currency / Monedă</b>", "cell"), P("EUR", "cell"), P("", "cell"), P("", "cell")]],
-                 colWidths=[3.6 * cm, 4.9 * cm, 4.1 * cm, 4.4 * cm])
-    meta.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), ZEBRA), ("BOX", (0, 0), (-1, -1), 0.5, RULE),
-                              ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4)]))
-
-    def party(label, lines):
-        cells = [[P(f"<b>{label}</b>", "cell")]] + [[P(line, "cell")] for line in lines]
-        t = Table(cells, colWidths=[8.2 * cm])
-        t.setStyle(TableStyle([("LINEBELOW", (0, 0), (-1, 0), 1, ACCENT), ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                               ("TOPPADDING", (0, 0), (-1, -1), 2), ("BOTTOMPADDING", (0, 0), (-1, -1), 2)]))
-        return t
-
-    seller = party("From / Furnizor", [
-        ph("agency_name", "Your company name"),
-        ph("agency_address", "Address"),
-        f"VAT / CIF: {ph('agency_tax_id', 'Tax ID')}",
-        f"Reg. no.: {ph('agency_reg_no', 'Trade register no.')}",
-        ph("agency_contact", "Email · phone"),
-    ])
-    buyer = party("Bill to / Cumpărător", [
-        ph("client_company", "Client company SRL"),
-        ph("client_address", "Registered address"),
-        f"CUI: {ph('client_tax_id', 'CUI')}",
-        f"Reg. Com.: {ph('client_reg_no', 'J../..../....')}",
-        f"Attn.: {ph('client_contact', 'Contact person')}",
-    ])
-    parties = Table([[seller, buyer]], colWidths=[8.5 * cm, 8.5 * cm])
-    parties.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0)]))
-
-    desc = ("<b>Website development, complete package: 40% advance payment</b><br/>"
-            "<font color='#5B6475'>Avans 40% pentru dezvoltare website, pachet complet. "
-            f"Total contract value {eur(WEBSITE_PRICE)}, per proposal {PROPOSAL_NO}.</font>")
-    lines = [
-        [P("#", "head"), P("Description / Descriere", "head"), P("Qty", "head"),
-         Paragraph("Unit price", ParagraphStyle("hr", parent=S["head"], alignment=TA_RIGHT)),
-         Paragraph("Amount", ParagraphStyle("hr2", parent=S["head"], alignment=TA_RIGHT))],
-        [P("1", "cell"), P(desc, "cell"), P("1", "cell"), P(eur(deposit), "right"), P(eur(deposit), "right")],
-    ]
-    line_t = Table(lines, colWidths=[0.8 * cm, 10.2 * cm, 1.2 * cm, 2.4 * cm, 2.4 * cm])
-    line_t.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), NAVY), ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                                ("LINEBELOW", (0, 1), (-1, -1), 0.5, RULE),
-                                ("TOPPADDING", (0, 0), (-1, -1), 6), ("BOTTOMPADDING", (0, 0), (-1, -1), 6)]))
-
-    if vat_rate is None:
-        vat_label = f"VAT / TVA {ph('vat_rate', '__%')}"
-        vat_value = ph("vat_amount", "amount")
-        total_value = f"{eur(deposit)} + VAT"
-    else:
-        vat = round(deposit * vat_rate / 100, 2)
-        vat_label = f"VAT / TVA {vat_rate}%" + (" (reverse charge)" if vat_rate == 0 else "")
-        vat_value = eur(vat)
-        total_value = eur(deposit + vat)
-    totals = Table([
-        [P("Subtotal", "right"), P(eur(deposit), "right")],
-        [P(vat_label, "right"), P(vat_value, "right")],
-        [Paragraph("<b>Total due / Total de plată</b>", ParagraphStyle("tt", parent=S["rightb"], fontSize=11, textColor=colors.white)),
-         Paragraph(f"<b>{total_value}</b>", ParagraphStyle("tv", parent=S["rightb"], fontSize=11, textColor=colors.white))],
-    ], colWidths=[5.0 * cm, 3.2 * cm], hAlign="RIGHT")
-    totals.setStyle(TableStyle([("BACKGROUND", (0, 2), (-1, 2), ACCENT), ("LINEBELOW", (0, 0), (-1, 1), 0.5, RULE),
-                                ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 5)]))
-
-    plan = grid([
-        ["Payment schedule / Calendar de plată", "Share", "Amount"],
-        ["Advance at signing: <b>this proforma</b>", "40%", eur(deposit)],
-        ["On design approval", "30%", eur(design_part)],
-        ["At launch", "30%", eur(launch_part)],
-        ["<b>Total website, excluding VAT</b>", "100%", f"<b>{eur(WEBSITE_PRICE)}</b>"],
-    ], [10.6 * cm, 2.6 * cm, 3.8 * cm], first_col_bold=False)
-
-    pay = Table([
-        [P("<b>Payment details / Date de plată</b>", "cell"), P("", "cell")],
-        [P("Beneficiary", "cell"), P(ph("agency_name", "Your company name"), "cell")],
-        [P("Bank", "cell"), P(ph("agency_bank", "Bank name"), "cell")],
-        [P("IBAN", "cell"), P(ph("agency_iban", "IBAN"), "cell")],
-        [P("SWIFT / BIC", "cell"), P(ph("agency_swift", "SWIFT"), "cell")],
-        [P("Payment reference", "cell"), P(f"<b>{PROFORMA_NO}</b>", "cell")],
-    ], colWidths=[3.8 * cm, 13.2 * cm])
-    pay.setStyle(TableStyle([("BOX", (0, 0), (-1, -1), 0.75, ACCENT), ("BACKGROUND", (0, 0), (-1, 0), ACCENT_TINT),
-                             ("SPAN", (0, 0), (-1, 0)), ("LINEBELOW", (0, 0), (-1, -2), 0.5, RULE),
-                             ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4)]))
-
-    story = [
-        head, Spacer(1, 0.6 * cm), meta, Spacer(1, 0.6 * cm), parties, Spacer(1, 0.7 * cm),
-        line_t, Spacer(1, 0.3 * cm), totals, Spacer(1, 0.7 * cm), plan, Spacer(1, 0.6 * cm),
-        pay, Spacer(1, 0.6 * cm),
-        P("This is a proforma invoice, not a fiscal document. The fiscal invoice is issued once payment is received. "
-          "Payable in EUR, or in RON at the BNR rate on the payment date.", "small"),
-        P("Acest document nu este factură fiscală. Factura fiscală se emite după încasarea plății. "
-          "Plata se poate face în EUR sau în RON, la cursul BNR din ziua plății.", "small"),
-    ]
+    story = (cover_story() + summary_story() + concept_story() + process_story() + website_story()
+             + seo_story() + costs_story() + acceptance_story())
     doc.build(story)
 
 
 if __name__ == "__main__":
     build_proposal(HERE / f"Proposal-{PROPOSAL_NO}-Website-SEO.pdf")
-    build_proforma(HERE / f"Proforma-{PROFORMA_NO}-Website-Deposit.pdf")
-    print("PDFs written to", HERE)
+    print("PDF written to", HERE)
