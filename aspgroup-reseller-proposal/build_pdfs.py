@@ -167,7 +167,7 @@ def cover_story():
 def summary_story():
     offer = offer_box([
         ["Your package", "Normal price", "Your price", "When you pay"],
-        ["Complete website that sells to customers, with online shop",
+        ["Complete website that sells to customers, with online shop and card payments",
          f"<strike>{eur(WEBSITE_NORMAL)}</strike>", f"<b>{eur(WEBSITE_PRICE)}</b> one-off",
          f"Once it is finished and live (week {LIVE_WEEKS})"],
         ["Google plan (SEO), our best plan", f"<strike>{eur(SEO_NORMAL)}/month</strike>",
@@ -186,14 +186,14 @@ def summary_story():
         ["Customers", "Contact form and phone numbers",
          "Buttons to ask for a price, book a test ride, value a trade-in, call or WhatsApp"],
         ["Showrooms", "The supplier's 4 showrooms", "Your showrooms, with map, hours and Google reviews"],
-        ["Online shop", "Parts sold on a separate site", "Your own shop for parts, helmets and clothing"],
+        ["Online shop", "Parts sold on a separate site", "Your own shop for parts, helmets and clothing, paid by card"],
         ["Used vehicles", "—", "A page for used vehicles and trade-ins"],
     ]
     return [
         P("Summary", "h1"),
         P("aspgroup.ro is the supplier's website: it presents the brands and serves dealers. We will build you "
           "something different: a website that sells directly to customers (B2C), so people in your area find you "
-          "on Google and call, book a test ride, ask for financing or buy online.", "lead"),
+          "on Google and call, book a test ride, ask for financing, reserve a vehicle or buy parts online by card.", "lead"),
         offer,
         Spacer(1, 0.2 * cm),
         P(f"Because you are a friend: everything included, no deposit, and you pay for the website only when it "
@@ -268,6 +268,8 @@ def website_story():
         ["Getting customers", "On every page: ask for a price, book a test ride, value a trade-in, apply for financing, "
                               "call or WhatsApp. Each request goes straight to the right showroom by email"],
         ["Financing", "A monthly payment calculator on every model. In the shop, customers can pay in instalments"],
+        ["Reserve by card", "Customers reserve a vehicle in stock online with a card deposit you choose (e.g. €300), "
+                            "then sign and pay the rest at your showroom: cash, card, transfer or financing"],
         ["Used vehicles", "A page for used vehicles and trade-ins"],
         ["Online shop", "Sell parts, accessories, helmets and clothing online. We set up to 2,000 products for you. "
                         "Card payment, courier delivery (Fan Courier, Sameday, Cargus) and automatic invoices"],
