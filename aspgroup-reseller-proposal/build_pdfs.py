@@ -6,7 +6,7 @@ Fill in DETAILS below (empty values print as yellow placeholders), then run:
 from pathlib import Path
 
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+from reportlab.lib.enums import TA_RIGHT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import cm
@@ -41,8 +41,13 @@ PROFORMA_NO = "PF-2026-001"
 ISSUE_DATE = "06.10.2026"
 VALID_UNTIL = "05.11.2026"
 DUE_DATE = "13.10.2026"
-WEBSITE_PACKAGE = ("Professional", 3500)
-DEPOSIT_SHARE = 0.40
+
+# One complete package at a friend price (normal price shown as the anchor).
+WEBSITE_NORMAL, WEBSITE_PRICE = 5500, 1900
+SEO_NORMAL, SEO_PRICE = 900, 300
+CARE_PRICE = 60
+LIVE_WEEKS = 12
+DEPOSIT_SHARE, DESIGN_SHARE = 0.40, 0.30
 
 # ---------------------------------------------------------------- look
 FONT_DIR = Path("/usr/share/fonts/truetype/crosextra")
@@ -88,8 +93,14 @@ def ph(key, label):
     return f"<font backColor='{PLACEHOLDER_BG}'>&nbsp;[{label}]&nbsp;</font>"
 
 
-def eur(amount):
-    return f"€{amount:,.2f}"
+def eur(amount, cents=True):
+    return f"€{amount:,.2f}" if cents else f"€{amount:,.0f}"
+
+
+def schedule():
+    deposit = round(WEBSITE_PRICE * DEPOSIT_SHARE, 2)
+    design = round(WEBSITE_PRICE * DESIGN_SHARE, 2)
+    return deposit, design, round(WEBSITE_PRICE - deposit - design, 2)
 
 
 def P(text, style="body"):
@@ -178,7 +189,7 @@ def cover_story():
         Spacer(1, 0.3 * cm),
         Paragraph("Website & SEO for a<br/>powersports dealer in Romania", title),
         Spacer(1, 0.5 * cm),
-        Paragraph("Concept, development and search engine optimisation for a reseller "
+        Paragraph("Design, build and Google visibility for a dealer "
                   "of the ASP Group range: Polaris, Segway Powersports, TGB, Linhai, "
                   "Indian Motorcycle, Royal Enfield and more.", sub),
         Spacer(1, 6.3 * cm),
@@ -189,56 +200,60 @@ def cover_story():
 
 
 def summary_story():
-    rec = [
-        ["", "What", "Price", "When"],
-        ["Website", "Professional package", "€3,500 one-off", "Live in 9 weeks"],
-        ["SEO", "Growth plan", "€550 / month", "From the month after launch"],
-        ["Care", "Hosting, updates, backups, security", "€60 / month", "From launch"],
+    deposit, _, _ = schedule()
+    offer = [
+        ["Your package", "Normal price", "Your price", "When"],
+        ["Complete website, every feature including the online shop",
+         f"<strike>{eur(WEBSITE_NORMAL, False)}</strike>", f"<b>{eur(WEBSITE_PRICE, False)}</b> one-off",
+         f"Live in {LIVE_WEEKS} weeks"],
+        ["Google plan (SEO), our best plan",
+         f"<strike>{eur(SEO_NORMAL, False)}/month</strike>", f"<b>{eur(SEO_PRICE, False)}/month</b>",
+         "From the month after launch"],
+        ["Hosting and care: we keep the site online, safe and up to date", "", f"<b>{eur(CARE_PRICE, False)}/month</b>",
+         "From launch"],
     ]
-    rec_t = grid(rec, [2.4 * cm, 6.4 * cm, 3.6 * cm, 4.6 * cm], zebra=False,
-                 extra=[("BACKGROUND", (0, 1), (-1, -1), ACCENT_TINT),
-                        ("BOX", (0, 0), (-1, -1), 1, ACCENT)])
+    offer_t = grid(offer, [7.0 * cm, 3.0 * cm, 3.4 * cm, 3.6 * cm], zebra=False,
+                   extra=[("BACKGROUND", (0, 1), (-1, -1), ACCENT_TINT),
+                          ("BOX", (0, 0), (-1, -1), 1, ACCENT)])
     compare = [
-        ["Area", "Keep from aspgroup.ro", "Add for you as a reseller"],
-        ["Catalogue", "Models grouped by type (ATV, UTV, moto, XTV) and brand, one page per model with specs and gallery",
-         "Filters by budget, engine size, seats, road registration and use (leisure, farm, forestry, kids)"],
-        ["Prices", "EUR price with a RON equivalent (ASP uses a Banca Transilvania rate, 5.29 RON/EUR on 1 May 2026)",
-         "RON recalculated automatically every day, so prices never go stale"],
-        ["Financing", "“Rate de la 40 €/lună” on model pages, through BT Direct",
-         "Payment calculator on every model and an online financing request sent straight to your partner"],
-        ["Promotions", "A promotions page with old and new prices",
-         "Promo landing pages built for Google Ads and Meta campaigns, with stock badges"],
-        ["Leads", "Contact forms, phone and showroom addresses",
-         "Request an offer, book a test ride, trade-in valuation, WhatsApp and click-to-call, all tracked in GA4"],
-        ["Local presence", "4 own showrooms (Bucharest, Cluj, Timișoara, Sibiu)",
-         "A page per showroom or service area with map, hours, Google reviews and dealer schema"],
-        ["Content", "News posts, such as Royal Enfield through Rabla 2026",
-         "Buying guides and comparisons written for Romanian searches"],
-        ["Parts and gear", "A separate shop, aspshop.ro", "Optional built-in shop for parts, helmets and apparel (Premium)"],
-        ["Used vehicles", "—", "A section for trade-ins and used units, a steady lead source for dealers"],
+        ["Area", "What aspgroup.ro has", "What your site adds"],
+        ["Models", "All models by type (ATV, UTV, motorcycle) and brand, with photos and specs",
+         "Search by budget, engine size, number of seats and use (fun, farm, forest, kids)"],
+        ["Prices", "Prices in euro and lei", "Lei prices update by themselves every day"],
+        ["Financing", "“Rate de la 40 €/lună” on each model",
+         "Customers see their monthly payment and can apply for financing online"],
+        ["Offers", "A page with current offers", "Offer pages ready for Google and Facebook ads"],
+        ["Customers", "Contact form and phone numbers",
+         "Buttons to ask for a price, book a test ride, value a trade-in, call or WhatsApp. "
+         "You see which ones bring customers"],
+        ["Showrooms", "Their 4 showrooms listed", "A page for each of your showrooms with map, hours and Google reviews"],
+        ["Articles", "Company news", "Buying guides and comparisons that people in Romania search for"],
+        ["Parts and gear", "A separate shop (aspshop.ro)", "Your own online shop for parts, helmets and clothing"],
+        ["Used vehicles", "—", "A page for used vehicles and trade-ins"],
     ]
     return [
         P("Summary", "h1"),
-        P("We recommend the Professional website plus the Growth SEO plan: a dealer site with the "
-          "full ASP Group catalogue, built to win local Google searches and turn visitors into calls, "
-          "test rides and financing requests.", "lead"),
-        rec_t,
+        P("One complete package, everything included, at a friend price: a website that sells the full "
+          "ASP Group range and has its own online shop, plus our best Google plan so local buyers find "
+          "you and call, book a test ride or ask for financing.", "lead"),
+        offer_t,
         Spacer(1, 0.2 * cm),
-        P("All prices in EUR, excluding VAT.", "small"),
-        P("The reference site, and what we add", "h2"),
-        P("aspgroup.ro is a strong importer catalogue. Your site keeps its structure and adds what a "
-          "reseller needs: local reach, lead capture and original content."),
-        grid(compare, [2.9 * cm, 6.9 * cm, 7.2 * cm]),
+        P(f"You save {eur(WEBSITE_NORMAL - WEBSITE_PRICE, False)} on the website and "
+          f"{eur(SEO_NORMAL - SEO_PRICE, False)} every month on Google. To start: a 40% deposit of "
+          f"{eur(deposit, False)}. All prices in EUR, excluding VAT.", "small"),
+        P("Compared with aspgroup.ro", "h2"),
+        P("Your site keeps everything good about the importer's site and adds what a dealer needs to "
+          "win customers in your area."),
+        grid(compare, [2.9 * cm, 6.4 * cm, 7.7 * cm]),
         Spacer(1, 0.25 * cm),
-        P("One rule: we write original text and do not copy from aspgroup.ro. Google ranks the original "
-          "page, not the copy. Photos come from the importer's dealer marketing kit, with ASP's written OK.", "small"),
+        P("Important: we write your own texts instead of copying aspgroup.ro, because Google ignores copied "
+          "pages. Photos come from ASP's dealer kit, with their OK.", "small"),
         PageBreak(),
     ]
 
 
 def concept_story():
-    img_w = CONTENT_W
-    img = Image(str(HERE / "sitemap.png"), width=img_w, height=img_w * 1286 / 1344)
+    img = Image(str(HERE / "sitemap.png"), width=CONTENT_W, height=CONTENT_W * 1286 / 1344)
     return [
         P("Site concept", "h1"),
         P("Visitors land on any page from search, maps, ads or dealer listings. Every page keeps the five "
@@ -248,188 +263,173 @@ def concept_story():
     ]
 
 
-def packages_story():
+def website_story():
     rows = [
-        ["", "Start", "Professional (recommended)", "Premium"],
-        ["Price", "<b>€1,900</b>", "<b>€3,500</b>", "<b>€5,500</b>"],
-        ["Live in", "5 weeks", "9 weeks", "12 weeks"],
-        ["Design", "Premium theme adapted to your brand", "Custom UX/UI design in Figma, 2 revision rounds", "Same as Professional"],
-        ["Catalogue", "Up to 60 models by brand and type, loaded by us", "Unlimited models, smart filters, compare up to 3 models", "Same as Professional"],
-        ["Prices", "EUR + RON, updated daily", "Same", "Same"],
-        ["Leads", "Request-an-offer form, call and WhatsApp buttons",
-         "Adds test-ride booking, trade-in valuation, financing request and routing of each lead to the right showroom", "Same as Professional"],
-        ["Financing", "—", "Monthly payment calculator on every model", "Adds instalments at checkout (e.g. TBI Bank, Mokka)"],
-        ["Used vehicles", "—", "Used and trade-in section", "Same"],
-        ["Online shop", "—", "—",
-         "Parts, accessories, helmets and apparel: up to 2,000 products imported, card payments (Netopia or Stripe), "
-         "couriers (Fan Courier, Sameday, Cargus), SmartBill or Oblio invoicing with e-Factura, Google Shopping and Meta feeds"],
-        ["Languages", "Romanian", "Romanian + English", "Romanian + English"],
-        ["SEO foundation", "Clean URLs, meta tags, XML sitemap, speed basics",
-         "Adds schema markup (product, offer, dealer), Core Web Vitals in the green, redirect plan", "Adds product schema for the shop"],
-        ["Tracking", "GA4 + Search Console", "Adds Google Tag Manager, Google Ads and Meta conversions, Consent Mode v2", "Same"],
-        ["Compliance", "GDPR cookie banner, legal page templates, ANPC SAL/SOL badges", "Adds accessibility to WCAG 2.1 AA",
-         "Adds ANPC-compliant checkout and returns pages"],
-        ["After launch", "30 days of fixes, 1 h training", "60 days of fixes, 2 h training", "90 days of fixes, 3 h training"],
+        ["Part", "What you get"],
+        ["Design", "A design made for your brand. You see it first and can ask for changes twice before we build"],
+        ["Models", "Every model you sell, sorted by type and brand. Customers search by budget, engine size, seats "
+                   "and use, and can compare up to 3 models side by side"],
+        ["Prices", "Prices in euro and lei. The lei prices update by themselves every day"],
+        ["Getting customers", "On every page: ask for a price, book a test ride, value a trade-in, apply for financing, "
+                              "call or WhatsApp. Each request goes straight to the right showroom by email"],
+        ["Financing", "A monthly payment calculator on every model. In the shop, customers can pay in instalments"],
+        ["Used vehicles", "A page for used vehicles and trade-ins"],
+        ["Online shop", "Sell parts, accessories, helmets and clothing online. We set up to 2,000 products for you. "
+                        "Card payment, courier delivery (Fan Courier, Sameday, Cargus) and automatic invoices"],
+        ["Languages", "Romanian and English"],
+        ["Ready for Google", "Built so Google can read and rank it: fast on phones and easy for Google to understand"],
+        ["Results you can see", "You can see how many people visit, where they come from and how many contact you"],
+        ["Legal", "Cookie banner, privacy and terms pages, and the ANPC consumer badges required in Romania"],
+        ["After launch", "90 days of free fixes and 3 hours of training, so your team can add models and offers alone"],
+        ["Ownership", "The website is 100% yours"],
     ]
-    highlight = [("BACKGROUND", (2, 1), (2, -1), ACCENT_TINT),
-                 ("BACKGROUND", (2, 0), (2, 0), ACCENT),
-                 ("LINEBEFORE", (2, 0), (2, -1), 1, ACCENT),
-                 ("LINEAFTER", (2, 0), (2, -1), 1, ACCENT)]
     return [
-        P("Website packages", "h1"),
-        P("Professional fits a multi-brand dealer: the full catalogue and every lead tool, without an online "
-          "shop. Choose Premium if you also want to sell parts and gear online.", "lead"),
-        grid(rows, [2.7 * cm, 4.3 * cm, 5.0 * cm, 5.0 * cm], zebra=False, extra=highlight),
-        Spacer(1, 0.25 * cm),
-        P("Every package is built on WordPress, mobile-first, with SSL and a pre-launch checklist. "
-          "You own the site, the code and the content. One-off prices in EUR, excluding VAT.", "small"),
+        P("What the website includes", "h1"),
+        P(f"Every feature we offer, in one build, live in {LIVE_WEEKS} weeks: "
+          f"<b>{eur(WEBSITE_PRICE, False)}</b> one-off instead of {eur(WEBSITE_NORMAL, False)}.", "lead"),
+        grid(rows, [3.6 * cm, 13.4 * cm]),
         PageBreak(),
     ]
 
 
 def seo_story():
     competitors = [
-        ["Competitor", "How they win on Google", "Your answer"],
-        ["aspgroup.ro (importer)", "Official model pages and prices, plus paid Google Ads",
-         "Original model content; ask ASP to list and link your site on its dealer pages"],
-        ["ATVRom network", "A separate site per city (atvrom-bucuresti.ro, atvrom-brasov.ro, atvrom-iasi.ro, "
-         "atvrom-timisoara.ro and more), selling Linhai, TGB, Segway, CFMOTO and Can-Am",
-         "Fewer, stronger local pages backed by a Google Business Profile and real reviews"],
-        ["motoclass.ro, atv-mag.ro, atv-vanzari.ro", "Multi-brand dealer shops with category pages",
-         "Better filters, financing tools and buying guides"],
-        ["polarisofficial.ro", "Official Polaris site with a dealer list",
-         "A listing in its dealer locator: a free, highly relevant backlink"],
-        ["OLX", "ASP and other dealers list stock there", "A lead channel to run alongside SEO, not a ranking rival"],
+        ["Who you compete with", "How they get customers from Google", "How you beat them"],
+        ["aspgroup.ro (the importer)", "Official pages for every model, plus paid Google ads",
+         "Your own texts (Google ignores copies), and a link from ASP's dealer page to your site"],
+        ["ATVRom", "A separate website for each city (Bucharest, Brașov, Iași, Timișoara and more)",
+         "Strong pages for your own area, plus Google Maps reviews from your customers"],
+        ["motoclass.ro, atv-mag.ro, atv-vanzari.ro", "Online catalogues with several brands",
+         "Easier search, monthly payments and buying guides"],
+        ["polarisofficial.ro", "The official Polaris site, with a list of dealers",
+         "Get listed there: it is free and Google values it"],
+        ["OLX", "Dealers post vehicles for sale there", "Use it too, for extra customers"],
     ]
     keywords = [
-        ["Cluster", "Example searches (Romanian)", "Page that ranks", "Competition"],
-        ["Model and price", "linhai 370 promax pret, segway at5 l eps pret, royal enfield hunter 350 pret, tgb blade 1000 pareri",
-         "Model pages with original reviews and specs", "Low"],
-        ["Use cases", "atv pentru agricultura, utv pentru ferma, atv pentru vanatoare, atv copii", "Landing pages and articles", "Low"],
-        ["Comparisons", "linhai vs cfmoto, segway vs polaris, atv vs utv", "Articles", "Low"],
-        ["Local", "dealer atv [oraș], atv [oraș], service atv [oraș], royal enfield [oraș]",
-         "Showroom pages and Google Business Profile", "Low to medium"],
-        ["Buying guides", "atv inmatriculare, ce permis trebuie pentru atv, atv in rate, motocicleta prin rabla", "Articles", "Low to medium"],
-        ["Parts and gear", "piese linhai, accesorii atv, casca atv (Premium only)", "Shop categories", "Medium"],
-        ["Category", "atv de vanzare, utv de vanzare, motociclete noi", "Category pages", "High: 6 to 12 months"],
+        ["What people search for", "Examples of what they type in Google", "How hard to win"],
+        ["A model and its price", "linhai 370 promax pret, segway at5 l eps pret, royal enfield hunter 350 pret", "Easy"],
+        ["A vehicle for a job", "atv pentru agricultura, utv pentru ferma, atv pentru vanatoare, atv copii", "Easy"],
+        ["Comparisons", "linhai vs cfmoto, segway vs polaris, atv vs utv", "Easy"],
+        ["A dealer near them", "dealer atv [oraș], atv [oraș], service atv [oraș]", "Medium"],
+        ["Buying advice", "atv inmatriculare, ce permis trebuie pentru atv, atv in rate", "Medium"],
+        ["Parts and gear", "piese linhai, accesorii atv, casca atv", "Medium"],
+        ["The big general searches", "atv de vanzare, utv de vanzare, motociclete noi", "Hard: 6 to 12 months"],
     ]
-    plans = [
-        ["", "Local", "Growth (recommended)", "Authority"],
-        ["Price per month", "<b>€300</b>", "<b>€550</b>", "<b>€900</b>"],
-        ["Google Business Profile", "Optimisation for each showroom, weekly posts, review plan", "Same", "Same"],
-        ["Romanian directory listings", "15 at start", "25 at start", "35 at start"],
-        ["Pages optimised", "5 per month", "10 per month", "20 per month"],
-        ["Original model descriptions", "—", "6 per month", "12 per month"],
-        ["Articles in Romanian (1,000+ words)", "1 per month", "3 per month", "5 per month"],
-        ["Quality Romanian backlinks", "—", "2 per month from moto, auto, agri and news sites",
-         "4 per month, plus 1 press release per quarter"],
-        ["Technical monitoring", "Monthly", "Weekly", "Weekly"],
-        ["Reporting", "Monthly report", "Live dashboard of leads by channel, monthly call", "Adds a quarterly strategy workshop"],
-        ["Extras", "—", "City landing pages",
-         "YouTube SEO for walkaround videos, Google Shopping feed (with Premium site), 1 conversion test per month"],
+    plan = [
+        ["Every month", "What we do for you"],
+        ["Google Maps", "We look after your Google Maps listing for each showroom: photos, weekly posts and more reviews"],
+        ["Business directories", "We list your business on 35 Romanian business directories (first month)"],
+        ["Your pages", "We improve 20 pages of your site so Google ranks them higher"],
+        ["Model texts", "We write 12 original model descriptions"],
+        ["Articles", "We write 5 articles in Romanian, such as “Which ATV for a farm?” or “Linhai vs CFMOTO”"],
+        ["Recommendations", "4 Romanian moto, auto, farming or news websites link to yours (Google trusts sites "
+                            "that others recommend), plus 1 press article every 3 months"],
+        ["Health check", "We check the site every week and fix any problem"],
+        ["Extras", "Pages for the cities you serve, help with your YouTube videos, your shop products shown on Google Shopping"],
+        ["Report", "A simple monthly report: how many calls, messages and requests came from Google, and a monthly call"],
     ]
-    highlight = [("BACKGROUND", (2, 1), (2, -1), ACCENT_TINT),
-                 ("BACKGROUND", (2, 0), (2, 0), ACCENT),
-                 ("LINEBEFORE", (2, 0), (2, -1), 1, ACCENT),
-                 ("LINEAFTER", (2, 0), (2, -1), 1, ACCENT)]
     expect = [
-        ["Months 1–3", "Your showrooms appear in Google's local map results, and the first model pages reach page 1 or 2."],
-        ["Months 4–6", "Model, comparison and guide pages bring steady organic leads; local searches sit on page 1."],
-        ["Months 7–12", "We push for category terms such as “atv de vanzare” against ATVRom and the importer."],
+        ["Months 1–3", "Your showrooms start showing on Google Maps, and the first model pages appear on Google."],
+        ["Months 4–6", "People who search for models, comparisons or a dealer in your city find you and contact you."],
+        ["Months 7–12", "We go after the big searches, such as “atv de vanzare”."],
     ]
     return [
-        P("SEO opportunity in Romania", "h1"),
-        P("Your opening is local and long-tail search. The importer and the ATVRom dealer network own the broad "
-          "terms, but model-level questions and your own city are still winnable.", "lead"),
-        grid(competitors, [3.6 * cm, 6.9 * cm, 6.5 * cm]),
-        P("Keyword clusters we will target", "h2"),
-        P("Search volumes are confirmed in the kickoff keyword study; competition is our estimate.", "small"),
+        P("Your chance on Google", "h1"),
+        P("When someone in Romania wants an ATV or a motorcycle, they search on Google. The importer and the "
+          "big dealer networks show up for the general searches. But searches for a specific model, or for a dealer "
+          "in your city, are still easy to win, and those people are ready to buy.", "lead"),
+        grid(competitors, [3.6 * cm, 6.4 * cm, 7.0 * cm]),
+        P("What your future customers search for", "h2"),
+        P("We will confirm the exact searches in the first two weeks.", "small"),
         Spacer(1, 0.1 * cm),
-        grid(keywords, [2.7 * cm, 7.0 * cm, 4.4 * cm, 2.9 * cm]),
+        grid(keywords, [4.0 * cm, 9.6 * cm, 3.4 * cm]),
         PageBreak(),
-        P("SEO plans", "h1"),
-        P("We recommend Growth: enough content and links to lead local searches within about 3 months and model "
-          "searches within about 6. Plans start the month after launch; the technical SEO foundation is already "
-          "in every website package.", "lead"),
-        grid(plans, [4.0 * cm, 4.0 * cm, 4.5 * cm, 4.5 * cm], zebra=False, extra=highlight),
-        Spacer(1, 0.25 * cm),
-        P("Link and content costs are included, with no extra bills. Minimum term 6 months; a 12-month contract "
-          "gets 10% off. Monthly prices in EUR, excluding VAT.", "small"),
-        P("What to expect on Growth", "h2"),
+        P("What the Google plan (SEO) includes", "h1"),
+        P("SEO means getting your website onto the first page of Google when people search for what you sell, "
+          f"without paying for each click. Our best plan: <b>{eur(SEO_PRICE, False)}/month</b> instead of "
+          f"{eur(SEO_NORMAL, False)}. It starts the month after launch, for at least 6 months, with no extra costs.", "lead"),
+        grid(plan, [3.6 * cm, 13.4 * cm]),
+        P("What to expect", "h2"),
         grid(expect, [2.7 * cm, 14.3 * cm], header=False),
         Spacer(1, 0.25 * cm),
-        P("We judge success by leads (forms, calls, WhatsApp and financing requests) and track 50 keywords monthly. "
-          "No one can honestly guarantee a #1 position on Google; we commit to the work and the reporting above."),
+        P("We measure success in customers who contact you, not just in Google positions. Nobody can honestly "
+          "promise you #1 on Google; we promise the work above and a clear report every month."),
         PageBreak(),
     ]
 
 
 def costs_story():
+    deposit, design, launch = schedule()
     costs = [
         ["Item", "Price (EUR, excl. VAT)", "Notes"],
-        ["Care plan: EU hosting, plugin licences, updates, daily backups, security, uptime monitoring, 1 h of changes per month",
-         "€60/month (€90/month with the Premium shop)", "Needed unless you host and maintain the site yourselves"],
-        [".ro domain", "About €10/year", "Registered in your company's name"],
-        ["Card payment fees (Premium only)", "Per transaction", "Paid to the processor, e.g. Netopia or Stripe"],
-        ["Original model descriptions at launch", "€15 per model", "Growth and Authority SEO plans cover this over time"],
-        ["Extra language", "€500 one-off", "Translation and setup of one more language"],
-        ["Logo and visual identity", "€350 one-off", "Only if you do not have one yet"],
-        ["Showroom photo and video shoot", "Quoted on request", "Walkaround videos also feed YouTube SEO"],
-        ["Google Ads and Meta Ads management", "From €250/month plus ad budget", "The promo landing pages are already built for it"],
-        ["Work beyond the plan", "€25/hour", "Quoted before we start"],
+        ["Hosting and care: we keep the site online, safe, backed up and up to date, plus 1 hour of small "
+         "changes per month", f"{eur(CARE_PRICE, False)}/month", "Needed unless you have your own technical team"],
+        ["Website address (.ro domain)", "About €10/year", "Registered in your company's name"],
+        ["Card payment fees", "A small % per sale", "Paid to the payment company, e.g. Netopia or Stripe"],
+        ["Model texts written before launch", "€15 per model", "After launch, the Google plan writes 12 per month"],
+        ["One more language", "€500 one-off", "For example Hungarian"],
+        ["Logo and brand design", "€350 one-off", "Only if you do not have one yet"],
+        ["Photo and video shoot at your showroom", "Price on request", "Your own photos and videos sell better"],
+        ["Running your Google and Facebook ads", "From €250/month plus ad budget", "The offer pages are already ready for it"],
+        ["Extra work not in the package", "€25/hour", "Always priced and agreed before we start"],
     ]
     terms = [
-        "The website is paid 40% on signing, 30% when you approve the design and 30% at launch.",
-        f"This proposal is valid until {VALID_UNTIL}.",
-        "Prices are in EUR, excluding VAT. We can invoice in RON at the BNR rate on the invoice date.",
-        "SEO and Care plans are billed monthly in advance, starting the month after launch.",
-        "Two design revision rounds are included. Extra rounds or new features cost €25/hour and are always quoted first.",
-        "The timeline starts when we receive the items on the checklist. A late item moves launch by the same number of days.",
-        "The site, code, design files and content become yours on final payment. Domain, hosting and Google accounts "
-        "are opened in your company's name.",
-        "Legal pages (terms, privacy, cookies, returns) come as templates for your lawyer to approve.",
-        "Brand logos and photos follow each manufacturer's dealer guidelines and need ASP's approval before launch.",
+        f"The website is paid in three parts: 40% to start ({eur(deposit, False)}), 30% when you approve the "
+        f"design ({eur(design, False)}) and 30% when the site goes live ({eur(launch, False)}).",
+        f"This friend price is valid until {VALID_UNTIL}.",
+        "Prices are in EUR, excluding VAT. You can also pay in lei at the National Bank (BNR) rate on the invoice date.",
+        "The Google plan and hosting are paid monthly, starting the month after launch. The Google plan runs at least 6 months.",
+        "You can ask for design changes twice. Anything extra costs €25/hour and is always agreed first.",
+        "The 12 weeks start when we receive the items on the checklist. If something arrives late, launch moves by the same time.",
+        "Once fully paid, the website, its design and its texts are 100% yours, and every account is in your company's name.",
+        "We provide the legal pages (terms, privacy, cookies, returns) as templates; your lawyer should approve them.",
+        "Brand logos and photos follow each brand's rules for dealers and need ASP's OK before launch.",
     ]
     return [
         P("Running costs and add-ons", "h1"),
-        P("A live site costs €60 a month plus the domain; everything else here is optional.", "lead"),
+        P(f"After launch the site costs {eur(CARE_PRICE, False)} a month plus the domain; the add-ons are optional.", "lead"),
         grid(costs, [7.4 * cm, 4.6 * cm, 5.0 * cm]),
-        P("Payment terms and conditions", "h2"),
+        P("Payment terms", "h2"),
         *[P(f"•&nbsp;&nbsp;{t}") for t in terms],
         PageBreak(),
     ]
 
 
 def process_story():
+    deposit, design, launch = schedule()
     steps = [
         ["Step", "What happens", "Who", "When", "Payment"],
-        ["1. Accept", "You pick the package and plan, and sign the acceptance page", "You", "Week 0", "—"],
-        ["2. Deposit", "We send a proforma invoice for the deposit", "Both", "Week 0", "40%"],
-        ["3. Kickoff", "Keyword study, site map and content plan; you send the checklist items", "Both", "Weeks 1–2", "—"],
-        ["4. Design", "Design in 2 revision rounds, then your approval", "Us, then you", "Weeks 2–4", "30%"],
-        ["5. Build", "Development, catalogue loading, integrations and tracking", "Us", "Weeks 4–8", "—"],
-        ["6. Test", "Phones, browsers and forms checked; your final review", "Both", "Week 8", "—"],
-        ["7. Launch", "Site goes live; Search Console and Google Business Profile set up", "Us", "Week 9", "30%"],
-        ["8. Grow", "Monthly SEO and care, with a monthly report", "Us", "From month 2", "Monthly"],
+        ["1. Accept", "You sign the acceptance page", "You", "Week 0", "—"],
+        ["2. Deposit", "We send a proforma invoice for the deposit", "Both", "Week 0", f"40%: {eur(deposit, False)}"],
+        ["3. Start", "We study what your customers search for and plan the pages; you send us the items below",
+         "Both", "Weeks 1–2", "—"],
+        ["4. Design", "We show you the design; you ask for changes (twice) and approve it", "Us, then you", "Weeks 2–4",
+         f"30%: {eur(design, False)}"],
+        ["5. Build", "We build the site, add your models and set up the shop", "Us", "Weeks 4–11", "—"],
+        ["6. Test", "We test everything on phones and computers; you check it too", "Both", "Week 11", "—"],
+        ["7. Launch", "The site goes live and we connect it to Google and Google Maps", "Us", f"Week {LIVE_WEEKS}",
+         f"30%: {eur(launch, False)}"],
+        ["8. Grow", "Every month: Google work, site care and a simple report", "Us", "From the next month",
+         f"{eur(SEO_PRICE + CARE_PRICE, False)}/month"],
     ]
     needs = [
-        "Your choice of website package and SEO plan",
         "The signed acceptance page and the deposit payment",
         "Company details: legal name, CUI, Trade Register number and registered address",
-        "Your domain name, or approval to register one",
-        "Logo and brand colours, or the identity add-on",
-        "The brands and models you sell, and your dealer agreement with ASP Group East",
-        "ASP's dealer marketing kit: photos, logos, spec sheets and price list",
-        "For each showroom: address, hours, phone, WhatsApp number and the email that receives leads",
-        "Your financing partner and its terms (bank, leasing or buy-now-pay-later)",
-        "Access to any existing Google Business Profile, Google Ads, Search Console and Facebook accounts",
-        "Premium only: Netopia or Stripe, courier and SmartBill or Oblio accounts",
+        "The website address you want (we can help you choose and register one)",
+        "Your logo and brand colours, if you have them",
+        "The brands and models you sell",
+        "ASP's dealer kit: photos, logos, spec sheets and price list",
+        "For each showroom: address, opening hours, phone, WhatsApp number and the email that should receive requests",
+        "Your financing partner and its terms (bank or leasing company)",
+        "Access to your Google and Facebook business accounts, if you have any",
+        "For the shop: accounts for card payments (Netopia or Stripe), a courier and invoicing (SmartBill or Oblio); "
+        "we help you open them",
     ]
-    box = "<font face='Body' color='#2F6FDE'>□</font>"
+    box = "<font color='#2F6FDE'>□</font>"
     return [
         P("How we work, step by step", "h1"),
-        P("Eight steps from signature to a site that brings in leads. The Professional site is live in week 9.", "lead"),
-        grid(steps, [2.3 * cm, 8.0 * cm, 2.3 * cm, 2.4 * cm, 2.0 * cm]),
+        P(f"Eight steps from signature to a site that brings in leads, live in week {LIVE_WEEKS}.", "lead"),
+        grid(steps, [2.2 * cm, 7.5 * cm, 2.2 * cm, 2.6 * cm, 2.5 * cm]),
         P("What we need from you to start", "h2"),
         *[P(f"{box}&nbsp;&nbsp;{n}") for n in needs],
         PageBreak(),
@@ -437,15 +437,15 @@ def process_story():
 
 
 def acceptance_story():
-    box = "<font color='#2F6FDE' size='13'>□</font>"
-    choices = [
-        ["Website package", f"{box} Start, €1,900", f"{box} Professional, €3,500", f"{box} Premium, €5,500"],
-        ["SEO plan", f"{box} Local, €300/month", f"{box} Growth, €550/month", f"{box} Authority, €900/month"],
-        ["", f"{box} No SEO for now", "", ""],
-        ["Care plan", f"{box} Yes, €60/month (€90 with Premium)", f"{box} We host it ourselves", ""],
-        ["SEO term", f"{box} 6 months", f"{box} 12 months (10% off)", ""],
-    ]
-    choice_t = grid(choices, [3.2 * cm, 4.8 * cm, 4.6 * cm, 4.4 * cm], header=False, zebra=False)
+    deposit, _, _ = schedule()
+    accepted = grid([
+        ["What you accept", "Price"],
+        [f"Complete website, every feature including the online shop, live in {LIVE_WEEKS} weeks",
+         f"<b>{eur(WEBSITE_PRICE, False)}</b> one-off"],
+        ["Google plan (SEO), our best plan, for at least 6 months", f"<b>{eur(SEO_PRICE, False)}/month</b>"],
+        ["Hosting and care", f"<b>{eur(CARE_PRICE, False)}/month</b>"],
+    ], [12.0 * cm, 5.0 * cm], first_col_bold=False, zebra=False,
+        extra=[("BACKGROUND", (0, 1), (-1, -1), ACCENT_TINT), ("BOX", (0, 0), (-1, -1), 1, ACCENT)])
 
     def sign_block(title, company):
         rows = [
@@ -471,10 +471,10 @@ def acceptance_story():
     signs.setStyle(TableStyle([("LEFTPADDING", (0, 0), (-1, -1), 0), ("VALIGN", (0, 0), (-1, -1), "TOP")]))
     return [
         P("Acceptance", "h1"),
-        P(f"Tick your choices and sign to accept proposal {PROPOSAL_NO}. We then send the deposit proforma "
-          "invoice and book the kickoff.", "lead"),
-        choice_t,
-        Spacer(1, 0.5 * cm),
+        P(f"Sign below to accept proposal {PROPOSAL_NO}. We then send the proforma invoice for the "
+          f"{eur(deposit, False)} deposit and book the kickoff.", "lead"),
+        accepted,
+        Spacer(1, 0.4 * cm),
         P("By signing, both parties accept the scope, prices and terms in this proposal. "
           "All prices in EUR, excluding VAT.", "small"),
         Spacer(1, 0.6 * cm),
@@ -499,17 +499,14 @@ def build_proposal(path):
         PageTemplate("cover", frames=[frame], onPage=proposal_cover),
         PageTemplate("inner", frames=[frame], onPage=proposal_frame_pages),
     ])
-    story = (cover_story() + summary_story() + concept_story() + packages_story() + seo_story()
+    story = (cover_story() + summary_story() + concept_story() + website_story() + seo_story()
              + costs_story() + process_story() + acceptance_story())
     doc.build(story)
 
 
 # ================================================================ proforma
 def build_proforma(path):
-    package, total = WEBSITE_PACKAGE
-    deposit = round(total * DEPOSIT_SHARE, 2)
-    design_part = round(total * 0.30, 2)
-    launch_part = round(total - deposit - design_part, 2)
+    deposit, design_part, launch_part = schedule()
     vat_rate = DETAILS["vat_rate"]
 
     def page(canvas, doc):
@@ -574,9 +571,9 @@ def build_proforma(path):
     parties = Table([[seller, buyer]], colWidths=[8.5 * cm, 8.5 * cm])
     parties.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0)]))
 
-    desc = (f"<b>Website development, {package} package: 40% advance payment</b><br/>"
-            f"<font color='#5B6475'>Avans 40% pentru dezvoltare website, pachet {package}. "
-            f"Total contract value {eur(total)}, per proposal {PROPOSAL_NO}.</font>")
+    desc = ("<b>Website development, complete package: 40% advance payment</b><br/>"
+            "<font color='#5B6475'>Avans 40% pentru dezvoltare website, pachet complet. "
+            f"Total contract value {eur(WEBSITE_PRICE)}, per proposal {PROPOSAL_NO}.</font>")
     lines = [
         [P("#", "head"), P("Description / Descriere", "head"), P("Qty", "head"),
          Paragraph("Unit price", ParagraphStyle("hr", parent=S["head"], alignment=TA_RIGHT)),
@@ -606,12 +603,12 @@ def build_proforma(path):
     totals.setStyle(TableStyle([("BACKGROUND", (0, 2), (-1, 2), ACCENT), ("LINEBELOW", (0, 0), (-1, 1), 0.5, RULE),
                                 ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 5)]))
 
-    schedule = grid([
+    plan = grid([
         ["Payment schedule / Calendar de plată", "Share", "Amount"],
         ["Advance at signing: <b>this proforma</b>", "40%", eur(deposit)],
         ["On design approval", "30%", eur(design_part)],
         ["At launch", "30%", eur(launch_part)],
-        ["<b>Total website, excluding VAT</b>", "100%", f"<b>{eur(total)}</b>"],
+        ["<b>Total website, excluding VAT</b>", "100%", f"<b>{eur(WEBSITE_PRICE)}</b>"],
     ], [10.6 * cm, 2.6 * cm, 3.8 * cm], first_col_bold=False)
 
     pay = Table([
@@ -628,7 +625,7 @@ def build_proforma(path):
 
     story = [
         head, Spacer(1, 0.6 * cm), meta, Spacer(1, 0.6 * cm), parties, Spacer(1, 0.7 * cm),
-        line_t, Spacer(1, 0.3 * cm), totals, Spacer(1, 0.7 * cm), schedule, Spacer(1, 0.6 * cm),
+        line_t, Spacer(1, 0.3 * cm), totals, Spacer(1, 0.7 * cm), plan, Spacer(1, 0.6 * cm),
         pay, Spacer(1, 0.6 * cm),
         P("This is a proforma invoice, not a fiscal document. The fiscal invoice is issued once payment is received. "
           "Payable in EUR, or in RON at the BNR rate on the payment date.", "small"),
