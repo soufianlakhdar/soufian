@@ -182,7 +182,7 @@ Shared header: logo, nav (Product ▾ [Chat widget, Shared inbox, Multichannel, 
 Pages:
 1. **Home `/`:** a hero with a strong headline in your own words (e.g. "Every customer conversation. One inbox."), a subheadline, CTAs "Start free — no credit card" and "See it live", and an **animated product mockup built in HTML/CSS** (an inbox with a conversation list and a chat, and a floating chat bubble). Below the hero: a strip of integration tiles, a feature grid (8 features), a channels section, the "See what they type before they hit send" live typing preview, AI section, "Set up in 2 minutes" 3-step section (create a workspace → paste the snippet / install the WordPress plugin or Shopify app → reply from your inbox), a placeholder area for real testimonials (the founder fills it later; don't invent customer names or logos), a pricing teaser and a final CTA band. **Parlo's own chat widget runs live on the marketing site**, connected to a demo workspace.
 2. **Feature pages** `/features/chat-widget`, `/features/shared-inbox`, `/features/multichannel`, `/features/crm`, `/features/knowledge-base`, `/features/ai`, `/features/chatbot`, `/features/campaigns`: each with a hero, 3–6 benefit sections with HTML/CSS mockups, an FAQ and a CTA.
-3. **Pricing `/pricing`:** plans **Free** ($0: 2 seats, chat widget, shared inbox, 30-day history, basic contacts), **Pro** ($29/workspace/month: 6 seats, unlimited history, all channels, saved replies, knowledge base, Slack/webhooks/Shopify/WordPress, analytics, office hours), **Business** ($99/workspace/month: 20 seats, AI agent + copilot credits, chatbot builder, campaigns, routing rules, API, priority support, custom domain help center, remove branding) and **Enterprise** (custom: SSO/SAML, SLA, data residency, unlimited seats). A monthly/yearly toggle (2 months free yearly), a full feature comparison table and an FAQ. These numbers live in one config file shared with the billing code.
+3. **Pricing `/pricing`:** the freemium plans, AI calculator, comparison table and FAQ exactly as specified in **6.12**, plus `/compare/{competitor}` pages and the "Add free live chat" landing page for "Powered by" referral traffic.
 4. **Integrations marketplace:** see 6.1.1. This must match the structure exactly.
 5. **Docs `/docs`:** installation guide, JavaScript SDK reference, REST API reference (rendered from OpenAPI), webhooks reference, and guides for every integration.
 6. **Blog `/blog`** (MDX), **Changelog `/changelog`** (MDX), **About**, **Contact** (form → creates a conversation in Parlo's own workspace), **Legal**: `/terms`, `/privacy`, `/dpa`, `/cookies` (clearly marked templates for a lawyer to review).
@@ -456,11 +456,111 @@ General rules: each integration is a module with `validateConfig`, `connect` (OA
 - **Billing:** current plan, usage (seats, AI credits), upgrade/downgrade, invoices (Stripe Customer Portal).
 - **Personal:** profile, avatar, password, 2FA, sessions, notification preferences, language, theme.
 
-### 6.12 Billing & plans (Stripe)
-- Plans and limits defined in one shared config (`packages/shared/plans.ts`) used by the pricing page, the billing UI and **server-side entitlement checks** (seats, history retention, channels, AI credits, campaigns, API access, branding removal).
-- 14-day Pro trial on signup (no card). Stripe Checkout for upgrades, Customer Portal for card/invoices/cancel, proration on seat changes.
-- Webhooks: `checkout.session.completed`, `customer.subscription.created|updated|deleted`, `invoice.paid`, `invoice.payment_failed` (signature verified with the Stripe webhook secret, idempotent handling).
-- Dunning emails, a grace period, then downgrade to Free (data is kept, features locked). Stripe Tax for VAT.
+### 6.12 Freemium business model, plans & billing (Stripe)
+
+**Strategy in one line:** a **genuinely useful free-forever plan** (more generous than Crisp, Tidio and Chatwoot) to win signups and word of mouth. Every new account also gets a **14-day reverse trial** of the Growth plan. Revenue comes from a **hybrid model**: a flat price per workspace with seats included, plus **metered AI resolutions**. Copilot (AI help for operators) is bundled into every paid plan, never sold per seat.
+
+**Single source of truth:** all plans, prices, limits and feature flags live in `packages/shared/plans.ts`. The pricing page, the billing UI, the upgrade prompts and the **server-side entitlement checks** all read from this one file. Changing a number there changes it everywhere. All prices below are starting proposals the founder can edit.
+
+#### Plans
+
+| | **Free** | **Starter** | **Growth** ⭐ most popular | **Scale** | **Enterprise** |
+|---|---|---|---|---|---|
+| Price / month (billed yearly) | $0 forever | $29 ($24) | $79 ($66) | $249 ($208) | Custom (from ~$1k) |
+| Seats included / extra seat | 3 / — | 4 / +$12 | 8 / +$15 | 20 / +$15 | Custom |
+| Human conversations | Unlimited (fair use; review above 5k/month, never hard-block) | Unlimited | Unlimited | Unlimited | Unlimited |
+| History visible | 90 days (stored 1 year, unlocked instantly on upgrade) | 1 year | Unlimited | Unlimited | Custom retention |
+| Channels | Chat widget + 1 email inbox + operator PWA/mobile | + WhatsApp, Messenger, Instagram, Telegram | + 2 brands/websites | 5 brands | Unlimited |
+| Contacts / CRM | Unlimited contacts, 5 custom attributes | 20 attributes, segments | Unlimited attributes, companies, import/export | + custom roles, audit log | + SCIM |
+| Knowledge base | 1 help center, 30 articles, our subdomain, "Powered by" | Unlimited articles | Custom domain, multilingual | Multiple help centers | — |
+| Chatbot flows (active) | 1 | 3 | Unlimited | Unlimited | Unlimited |
+| AI agent resolutions / month | 50 (renews monthly, hard cap) | 150 | 500 | 1,500 | Committed volume |
+| AI copilot (drafts, rewrite, summaries, translation) | 50 actions / month | Included (fair use) | Included | Included | Included |
+| Campaigns | In-widget proactive messages only | 2,000 email sends / month | 10,000 | 50,000 | Custom |
+| Office hours, saved replies, tags, notes, mentions, CSAT | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Routing rules, SLAs, auto-assign, advanced analytics | — (7-day analytics) | 30-day analytics | ✅ full | ✅ | ✅ |
+| Integrations | WordPress, Shopify, WooCommerce, Slack alerts, all snippet platforms | + REST API, webhooks, Zapier/Make | + HubSpot & CRMs, Shopify order actions | + sandbox workspace | Custom |
+| Widget branding | "Powered by Parlo" shown | **Removed** | Removed | Removed | Removed |
+| Security | 2FA | 2FA | 2FA enforcement | + SAML SSO, audit log UI | + data residency, DPA, SLA, HIPAA-ready option |
+| Support | Help center + community | Email | Priority email + chat | Priority + onboarding call | Dedicated manager |
+
+Why this beats the market, as a short "Why Parlo" block on the pricing page:
+- **3 free seats and unlimited conversations.** Tidio caps free at 50 conversations; Crisp gives 2 seats.
+- **An email inbox on Free.**
+- **WhatsApp and branding removal from $29.** Crisp gates them at much higher tiers.
+- **AI included every month**, not a one-time allowance.
+- **Copilot bundled** instead of $29+/seat.
+- **Capped AI spend**: no surprise bills.
+
+#### Reverse trial
+- Every signup gets **14 days of Growth for free, with no card**. During the trial, AI resolutions are capped at 100 to control cost.
+- When the trial ends, the workspace moves to **Free automatically. Nothing is ever deleted.** Paid-only features become locked (visible but disabled with an upgrade prompt), and conversations older than 90 days are shown greyed out with "Upgrade to see full history".
+- In-app banner countdown, plus emails on day 1, 7, 12 and 14 that show what the team used ("Your AI agent resolved 37 conversations this trial").
+
+#### AI pricing (resolution-based, capped, honest)
+- **Definition of a resolution:** an AI agent conversation where the customer confirms it's solved, **or** the conversation ends with no human handoff and is not reopened within 24 hours. **Handoffs to a human are never charged.** Show this definition on the pricing page and in the billing screen.
+- Each plan includes resolutions (table above). Above that, paid plans pay **$0.49 per resolution** overage, or buy prepaid packs: 500 for $199 or 2,000 for $599 (~$0.30 each). That is far below the ~$1–2 per resolution of the big competitors.
+- **Spend cap:** the default cap is 2× the included amount. Alerts go to owners at 80% and 100% (email and in-app). Owners can raise or lower the cap. Free plans have a hard cap with no overage: when it is reached, the AI hands off to humans and the dashboard shows "AI could have answered 23 more conversations this month — upgrade".
+- Unused included resolutions roll over **one** month.
+- Meter usage in a `UsageMeter` table (per workspace, per metric, per billing period) and report overage to Stripe usage-based billing (Billing Meters) at the end of each period.
+- Track AI cost per resolution internally (tokens × model price) in the super-admin so prices stay profitable.
+
+#### Add-ons
+Extra seats; AI resolution packs; extra brand/website ($19/month); extra campaign sends. **WhatsApp conversation fees are passed through at Meta's cost with 0% markup**, shown transparently. Phone/voice minutes come later. There is **no** "remove branding" add-on on Free; that is the main reason to move to Starter.
+
+#### Upgrade moments (in-product paywalls, with no dead ends)
+Show a friendly upgrade modal or inline card **exactly when the user hits the limit**. It shows their own usage, what they unlock, and the price, and offers a one-time "Try it free for 7 days". **Never interrupt a user mid-reply and never block an incoming customer message.** Trigger points:
+1. Inviting a 4th teammate on Free.
+2. Clicking "Connect WhatsApp / Instagram / Messenger / Telegram" on Free.
+3. AI usage at 80% and 100%.
+4. Weekly "missed chats" email: "14 chats arrived while you were offline — your AI agent could have answered them."
+5. Opening or searching a conversation older than 90 days.
+6. Toggling "Remove branding" in the widget editor.
+7. Creating a 2nd chatbot flow, a 31st article, a help-center custom domain or a 2nd website.
+8. Creating an API key or webhook.
+9. Analytics: 7 days visible, longer ranges blurred with a preview.
+10. Turning on routing rules / SLAs once 2+ operators are active.
+11. Starting the first email campaign.
+12. A milestone celebration at the 100th conversation, with a plan suggestion.
+
+Log every paywall view, click and conversion as analytics events (below).
+
+#### Viral loop and referrals
+- The widget footer, email transcripts, help-center footer and CSAT pages of Free workspaces show **"⚡ Powered by Parlo"**. The link carries `?ref={workspaceId}&utm_source=widget` and goes to a landing page "Add free live chat to your website in 2 minutes".
+- **Referral program:** when a referred signup becomes paid, the referrer gets 1 month free or 200 AI resolutions, and the new customer gets 20% off for 3 months. There is a referral dashboard in Settings → Billing.
+- **Agency / partner program:** a multi-client dashboard (switch between client workspaces, bill centrally or per client), 20% recurring commission (founder adjustable), a partner directory page and white-label options on Scale.
+
+#### Special programs
+- **Startups** (raised under $5M, under 20 staff): Growth at 90% off year 1 and 50% off year 2, with 300 AI resolutions/month. Application form + manual approval in the super-admin.
+- **Nonprofits & education:** 50% off any plan.
+- **Open-source projects:** Growth free (verified via GitHub org).
+
+#### Anti-abuse for the free plan
+- Email verification required; disposable email domains blocked; per-IP and device-fingerprint signup limits; Cloudflare Turnstile CAPTCHA on signup and when spam is detected.
+- One Free workspace per **verified widget domain** (verified by the snippet's first ping).
+- **Phone verification is required before enabling the AI agent on Free.** The free AI only trains on the verified domain.
+- Per-visitor limits (e.g. 20 AI messages per conversation, message rate limits) to stop bots draining credits.
+- No bulk email campaigns on Free. On paid plans: double opt-in for imported lists, manual review of the first campaign, sender-reputation scoring, auto-pause on high bounce/complaint rates.
+- Free workspaces with no widget activity for 90 days are archived (owner warned twice by email); their data is kept for 12 months and then deleted (documented in the privacy policy).
+
+#### Billing implementation (Stripe)
+- **Stripe Checkout** for upgrades, **Customer Portal** for cards/invoices/cancel, proration for seat and plan changes, monthly/yearly ("2 months free"), and **Stripe Tax** for VAT/GST. Coupons and promotion codes power startups, referrals and partners.
+- **Localized pricing:** charge in USD, EUR, GBP, INR and BRL, with purchasing-power-adjusted prices (30–50% lower) for emerging markets, selected by card country + IP. AI packs get at most 20% off because of the cost floor.
+- Webhooks: `checkout.session.completed`, `customer.subscription.created|updated|deleted`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.trial_will_end`. Signature verified, idempotent handling (store processed event IDs).
+- **Downgrades never delete data.** Extra seats beyond the new plan become read-only (the owner picks who stays active). Over-limit features lock, but conversations keep flowing in. Failed payments trigger dunning emails at day 0/3/7, a 14-day grace period, then an automatic move to Free.
+- **Entitlements engine:** `can(workspace, "feature")` and `limit(workspace, "metric")` helpers, used by **every** API route and UI component. Never trust the client. Every limit has an integration test.
+- **Pricing page:** 4 columns + Enterprise, Growth highlighted, annual selected by default, an **AI cost calculator** (slider: monthly conversations × % AI-resolved → price), the resolution definition, a full comparison table, a "Free forever — no credit card" note and an FAQ.
+- **Comparison pages** `/compare/{competitor}` (Crisp, Intercom, Tidio, tawk.to, Zendesk, LiveChat, Chatwoot): factual, dated, fair tables with sources, plus migration help.
+
+#### Growth metrics to instrument (product analytics, e.g. self-hosted PostHog)
+Track these events and show the funnel in the super-admin:
+- **Acquisition:** visitor → signup, plus the share of signups from "Powered by" links.
+- **Setup:** widget live (first ping) within 24h, and median minutes to widget live.
+- **Aha moment:** first visitor conversation answered within 7 days, and first AI resolution.
+- **Habit:** conversations replied in 3 of the first 4 weeks; 2+ active seats or 2+ channels.
+- **Product-qualified lead (PQL):** hit a limit + invited a teammate + more than 50 conversations/month. Flag PQLs to the founder.
+- **Conversion:** free → paid within 180 days (target 3–5%, great is 6–8%) and reverse-trial conversion.
+- **Economics:** net revenue retention, annual vs monthly mix, AI gross margin per resolution, cost per active free workspace, abuse rate.
 
 ### 6.13 Public REST API & developer platform
 - `https://api.yourdomain.com/v1/...` with **API keys** (`Authorization: Bearer pk_live_…`, scopes like `conversations:read`, `conversations:write`, `contacts:read`, `contacts:write`, `messages:write`, `articles:read`), per-key rate limits (headers `X-RateLimit-*`), cursor pagination, consistent errors `{ error: { code, message } }`, and idempotency keys for POST.
