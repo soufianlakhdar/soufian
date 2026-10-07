@@ -6,6 +6,8 @@
 2. Copy **everything from "PROMPT START" to "PROMPT END"** and paste it into your AI builder (Claude Code, Cursor, Windsurf, Lovable, Bolt, Replit Agent, v0, …).
 3. The AI builds the product **one phase at a time**. When it finishes a phase and shows you the report, reply: **"Continue with the next phase."**
 4. If it ever stops early, reply: **"Re-read PROMPT.md section 14 (Definition of Done) and finish the current phase completely."**
+5. The prompt is long on purpose. If your tool has a small memory (Lovable, Bolt, v0…), first save it in the project as `PROMPT.md`, then tell the AI: **"Read PROMPT.md fully and start with section 15."**
+6. Prices, limits and competitor facts come from public research in October 2026. Check them before you launch; all prices live in one file (`plans.ts`) and are easy to change.
 
 ---
 
@@ -41,7 +43,7 @@ Target customers: startups, SaaS companies, e-commerce stores (Shopify / WooComm
 
 ## 2. Non-negotiable rules (read twice)
 
-1. **Original brand, no copying.** Copy Crisp's *feature set and information architecture* only. **Never** copy Crisp's text, logos, images, illustrations, icons, CSS or exact layouts, and never use the word "Crisp" in the product. Write all copy yourself. Use no third-party brand logos: integration icons are colored tiles with initials, or simple generic SVG glyphs.
+1. **Original brand, no copying.** Copy Crisp's *feature set and information architecture* only. **Never** copy Crisp's text, logos, images, illustrations, icons, CSS or exact layouts, and never use the word "Crisp" in the product UI. The only exceptions are factual, dated `/compare/*` pages and an "Import from …" tool. Write all copy yourself. Use no third-party brand logos: integration icons are colored tiles with initials, or simple generic SVG glyphs.
 2. **Work in phases** (section 12). Finish one phase completely before starting the next. Never jump ahead.
 3. **No fake features.** Every button, page and setting you build must really work end to end, with a database, an API, the UI and tests. No "TODO", no lorem ipsum, no mocked UI that does nothing. If a feature belongs to a later phase, do not show it yet, or show it clearly labeled "Coming soon".
 4. **External services you cannot reach** (Meta/WhatsApp, Shopify, Stripe, Slack, email provider, LLM API): implement the integration fully and drive it with environment variables. Also write test fixtures/mocks so all tests pass without real credentials. Document exactly how to get each credential in `docs/SETUP_<SERVICE>.md`.
@@ -119,6 +121,8 @@ docker-compose.yml, .env.example, README.md, CHANGELOG.md
 
 **Concepts:**
 - **Workspace** (= one website or brand; Crisp calls this a "website"). A user can belong to many workspaces. Each workspace has a public **Website ID** used in the widget snippet.
+- **Brand** = a website/brand *inside* a workspace. Each has its own widget settings, help center, email address, logo and reports, so agencies and multi-brand companies don't pay per brand the way Crisp customers do. Every workspace starts with one brand; the Website ID belongs to the brand.
+- **Region** = where the workspace's data lives (**EU** or **US**), chosen at signup.
 - **Operator** = a team member (user) inside a workspace. Roles: **Owner**, **Admin**, **Agent**.
 - **Contact** = an end customer. They start as an anonymous visitor and become identified when we learn an email, phone or WhatsApp number. Contacts are merged when the same person is recognized again.
 - **Conversation** = a thread between a contact and the team on one **channel** (chat, email, whatsapp, messenger, instagram, telegram, sms). Status: **open**, **snoozed**, or **resolved**.
@@ -166,6 +170,19 @@ WebhookEndpoint(workspaceId, url, secret, events[], enabled) + WebhookDelivery(e
 Subscription(workspaceId, stripeCustomerId, stripeSubscriptionId, plan, status, seats, currentPeriodEnd, trialEndsAt)
 Notification(userId, type, data JSON, readAt)
 AuditLog(workspaceId?, actorId?, action, target, metadata JSON, ip)
+Brand(workspaceId, name, domain, websiteId (public), widgetSettings JSON, helpCenterId?, emailAddress?, logoUrl)
+Ticket fields on Conversation: type (chat|ticket), ticketTypeId?, slaPolicyId?, slaDueAt?, slaBreachedAt?, parentId? (split/merge), linkedIds[]
+TicketType(workspaceId, name, fields JSON) + SlaPolicy(workspaceId, name, conditions JSON, firstResponseMins, nextResponseMins, resolutionMins, businessHoursId)
+SideConversation(conversationId, channel, to, subject) + its own messages
+AiAction(workspaceId, name, description, inputSchema JSON, http JSON | builtin, requiresApproval, approvalThreshold JSON, enabled)
+AiActionRun(actionId, conversationId, input, output, status, approvedById?)
+AiSimulation(workspaceId, questions JSON, results JSON, score, createdAt)
+QaScore(conversationId, scores JSON, predictedCsat, reviewerId?)
+Topic(workspaceId, label, language, conversationCount, trend) + ConversationTopic(conversationId, topicId)
+UsageMeter(workspaceId, metric, periodStart, used, included, capped)
+Referral(referrerWorkspaceId, referredWorkspaceId, status, rewardGrantedAt) + Partner(userId, commissionRate, payoutDetails)
+PhoneNumber(workspaceId, provider, number, capabilities) + Call(conversationId, direction, durationSec, recordingUrl, transcript)
+TrustSafetyCase(workspaceId, reason, signals JSON, status, reviewedById, decision, appealText)
 StatusPage + Monitor + Incident (phase 5)
 ```
 
@@ -229,15 +246,15 @@ Layout:
 
 **Full catalog to seed** (write your own original tagline, description, features and setup steps for each):
 
-| Category | Available at launch (fully working) | Coming soon (listed, labeled) |
+| Category | Available (fully working, in the phase that builds it) | Coming soon (listed, labeled) |
 |---|---|---|
-| **Messaging** | WhatsApp (native), Email inbox (native), Messenger (native), Instagram DMs (native), Telegram (native) | SMS (Twilio), LINE, Viber, X/Twitter DMs |
-| **CMS** | WordPress (plugin), Shopify (app), WooCommerce (via the WordPress plugin), Webflow, Wix, Squarespace, Ghost, Drupal, Joomla, Framer (snippet guides) | Magento, PrestaShop, BigCommerce |
-| **CRM** | (built-in CRM) HubSpot (native: contact sync + log conversations) | Salesforce, Pipedrive, Zoho CRM |
-| **Marketing** | Google Tag Manager (snippet), Google Analytics 4 (widget events to dataLayer), Mailchimp (sync contacts to an audience) | Klaviyo, Brevo, ActiveCampaign |
-| **Automation** | Webhooks (native), Zapier (triggers + actions app), Make, n8n (via webhooks + API) | Pipedream |
-| **Team-work** | Slack (native: notifications, then reply from Slack threads), Microsoft Teams (notifications), Discord (notifications) | Notion, Linear, Jira (create issue from conversation) |
-| **Other** | JavaScript SDK, React / Next.js guide, REST API, iOS/Android SDK (phase 5) | Zendesk import, Intercom import |
+| **Messaging** | WhatsApp, Email (Gmail / Microsoft 365 / forwarding / SMTP), Messenger, Instagram DMs, Telegram, LINE, Viber, X/Twitter DMs, SMS (Twilio), Discord, Slack Connect, Microsoft Teams, Amazon Buyer Messages, Klaviyo replies, Phone (native, then Aircall, Ringover) | Apple Messages for Business, Google Business Messages successor, RCS |
+| **CMS** | WordPress (plugin), Shopify (app), WooCommerce (via the WordPress plugin), PrestaShop (module), Adobe Commerce / Magento 2 (module), WHMCS (module), Webflow, Wix, Squarespace, Ghost, Drupal, Joomla, Framer, Bubble, Notion sites, Google Tag Manager (snippet guides) | BigCommerce, Shopware |
+| **CRM** | (built-in CRM) HubSpot (2-way sync), Salesforce, Pipedrive, Zoho CRM, Microsoft Dynamics 365 | Attio, Close, monday CRM |
+| **Marketing** | Google Analytics 4, Google Tag Manager, Mailchimp, Klaviyo, Segment, PostHog, Mixpanel, Amplitude, Brevo, ActiveCampaign | Customer.io, HubSpot Marketing |
+| **Automation** | Webhooks, Zapier, Make, n8n, Dialogflow (external bot), Calendly / Cal.com (booking actions) | Pipedream, Workato |
+| **Team-work** | Slack (alerts + reply from Slack), Microsoft Teams, Discord, Jira, Linear, GitHub, Trello, Notion | Asana, ClickUp |
+| **Other** | JavaScript SDK, React / Next.js guide, REST API, MCP server, Stripe (customer & billing sidebar + actions), ChargeDesk-style billing view, iOS / Android / React Native / Flutter SDKs, Status page reporters | Zendesk / Intercom / Crisp importers (listed under Other) |
 
 "Available at launch" means available by the end of the phase that builds it (section 12). Until then it shows "Coming soon".
 
@@ -336,6 +353,13 @@ Layout: **3 panes**: a conversation list (left), the conversation (center), and 
 - **Office hours** per workspace (weekly schedule, timezone, holidays). Outside hours, the widget shows away mode and an auto-reply.
 - **SLA timers** (first response target) with a visual warning (Business plan).
 
+### 6.4.1 Tickets, SLAs and long-running issues (a Crisp gap)
+- A conversation can be turned into a **ticket** (or created as one from email, the customer portal, the API or the widget's "Send us a request" form). **Ticket types** have custom fields (e.g. Bug: severity, URL).
+- **SLA policies** (conditions → first response, next response and resolution targets, counted in **business hours**), countdown badges in the inbox, breach alerts (in-app, email, Slack), and SLA reports.
+- **Merge** (duplicates are detected and suggested automatically), **split** a message into a new ticket, **link** related tickets, **side conversations** (email a supplier or colleague from inside the ticket without the customer seeing it), **mark as unread**, and **follow** a ticket.
+- **Customer portal** (`help.yourdomain.com/{workspace}/requests`, or the custom domain): the customer logs in by magic link, sees their open/closed tickets, replies, and adds attachments.
+- **Delivery guarantee** (applies to all conversations): every outbound message shows pending → sent → delivered → read, retries automatically with backoff, and on final failure shows a red banner with "Retry" or "Send by email instead". **Unanswered-chat backup alert:** if a conversation waits longer than X minutes (configurable) and no operator is online, email/SMS the on-call operator.
+
 ### 6.5 Contacts / CRM
 
 - Contacts list: search, sort, filter builder (any attribute, custom data, segment, last seen, country, number of conversations), saved **segments** (dynamic), column chooser, pagination, **CSV import** (field mapping, dedupe by email/phone) and **CSV export**.
@@ -354,7 +378,7 @@ Layout: **3 panes**: a conversation list (left), the conversation (center), and 
 
 ### 6.7 AI and chatbots (make this Parlo's strongest area)
 
-**LLM layer** (`packages/llm`): one interface `complete()`, `stream()`, `embed()`. Default provider: Anthropic Claude (model IDs from env), with an OpenAI-compatible adapter. Track **per-workspace AI credit usage** with plan limits, timeouts, retries, prompt-injection-resistant system prompts, and never send secrets to the model.
+**LLM layer** (`packages/llm`): one interface `complete()`, `stream()`, `embed()`. Default provider: Anthropic Claude (model IDs from env), with adapters for OpenAI-compatible APIs, Google and Mistral. Workspaces can pick the provider/model, including an **EU-hosted model** for EU data. Meter **AI resolutions and copilot actions** per workspace exactly as 6.12 defines them (included volume, rollover, spend caps, per-conversation cap), with timeouts, retries, prompt-injection-resistant system prompts, and never send secrets to the model.
 
 1. **AI Copilot for operators** (in the composer):
    - **Suggest reply** using the conversation, the contact profile, the knowledge base and saved replies (streamed, editable before sending).
@@ -372,6 +396,19 @@ Layout: **3 panes**: a conversation list (left), the conversation (center), and 
    - Drag-and-drop canvas (React Flow). Nodes: Send message, Ask a question with buttons/quick replies, Collect email/phone/name (with validation), Condition (attribute/segment/page/office hours), Set attribute/tag, Assign to team/operator, AI answer, Webhook call (send data / branch on response), Wait, Close conversation.
    - Triggers: conversation started, first visitor message, page URL, office hours closed, specific channel.
    - Test mode (simulate in a side panel), versioning (draft vs live), and analytics per node (drop-off).
+4. **AI actions** (the AI agent and copilot *do things*, not only talk):
+   - **Built-in actions:** look up an order, track a shipment, cancel/refund/edit an order (Shopify, WooCommerce), look up a Stripe subscription or invoice and update billing details, create a ticket, book or reschedule a meeting (Cal.com/Calendly), and add a tag or assign.
+   - **Action builder:** the workspace defines its own action: name, description, input schema, HTTP request (URL, method, headers, auth stored encrypted, body template), and how to read the response. The AI decides when to call it.
+   - **Guardrails:** per-action approval rules (e.g. "refunds over $50 need a human"), a human **approval queue** in the inbox, identity verification before account-specific actions (verified email/HMAC or a one-time code), and a full log of every run (AiActionRun).
+5. **AI that improves itself, safely:**
+   - **Learning from past conversations** (opt-in): mine resolved conversations into suggested Q&A snippets that a human approves before the AI uses them.
+   - **Simulations:** before going live (and after every change), run the AI against 50+ real past questions, show each answer, its sources and a score, and block publishing below a threshold. **Simulations and playground use are never billed.**
+   - **Knowledge gap detection:** questions the AI could not answer are clustered and turned into **drafted articles** for one-click approval.
+6. **AI quality & insights:**
+   - **AI QA:** automatically score 100% of human and AI conversations (accuracy, tone, empathy, resolution, policy compliance), with a coaching view per operator and a review queue for low scores.
+   - **Predicted CSAT** for every conversation, even without a survey.
+   - **Topic clustering in every language:** what customers ask about this week, trending topics, and spike alerts.
+7. **"Paste your URL → AI agent live in 5 minutes"** guided setup: crawl the site, auto-generate FAQ snippets, run a simulation, then publish.
 
 ### 6.8 Channels and integrations: exact technical requirements
 
@@ -432,6 +469,34 @@ General rules: each integration is a module with `validateConfig`, `connect` (OA
 - **Microsoft Teams / Discord:** webhook notifications like Slack v1.
 - **Snippet platforms** (Webflow, Wix, Squarespace, Ghost, Drupal, Joomla, Framer, GTM, React/Next.js): detail pages with accurate step-by-step instructions plus the user's personal snippet when logged in.
 
+#### 6.8.11 E-commerce suite (beat Crisp and match Gorgias/Tidio)
+- One sidebar for **Shopify, WooCommerce and Stripe** customers: profile, lifetime value, orders, shipments with tracking links, subscriptions, and **cart preview** (what the visitor has in their cart right now, sent by the widget/theme extension).
+- **Order actions** from the inbox and through the AI agent (6.7 actions), with guardrails: refund (full/partial), cancel, edit the shipping address, resend confirmation, create a discount code, and duplicate the order.
+- **AI shopping assistant** in the widget: searches the product catalog (synced from Shopify/WooCommerce), recommends products with images and prices, adds to cart and applies discount codes.
+- **Revenue attribution:** orders placed within N days after a conversation or an AI reply are attributed (by customer email/cart token), and the analytics show "revenue influenced by support" per operator, AI and campaign.
+- **WhatsApp commerce:** share product catalogs, send template broadcasts to opted-in contacts, and track click-to-WhatsApp ads.
+
+#### 6.8.12 Phone channel and AI voice receptionist (Phase 5)
+- Buy or port phone numbers (Twilio/Telnyx). Calls ring in the browser and the mobile app (WebRTC), with IVR menus, voicemail and a recording consent message, plus **transcripts and AI summaries in the conversation timeline**.
+- An **AI voice receptionist** answers calls 24/7 using the same knowledge base and actions, and transfers to a human or takes a message. Resolutions are billed like chat resolutions.
+- SMS (send and receive) on the same numbers.
+
+#### 6.8.13 B2B support channels (Phase 4)
+- **Slack Connect** shared channels: each customer's shared channel becomes a source of conversations; threads map to tickets and replies sync both ways.
+- **Microsoft Teams** and **Discord** as inbound support channels (not only notifications), using the same thread-to-ticket model.
+
+#### 6.8.14 More messaging channels (Phase 4), all landing in the same inbox
+Every channel must verify the platform's request signature, dedupe by external ID, support attachments where the platform does, and show its icon in the inbox.
+- **LINE:** Messaging API, verify `X-Line-Signature` (base64 HMAC-SHA256 of the body with the channel secret); reply/push messages.
+- **Viber:** bot API, verify `X-Viber-Content-Signature` (hex HMAC-SHA256 with the bot token).
+- **SMS:** Twilio (later Telnyx/Vonage), verify `X-Twilio-Signature`; MMS images; STOP/opt-out handling.
+- **X/Twitter DMs:** Account Activity API (CRC challenge + signature); needs a paid X API tier, so document the cost.
+- **Instagram:** also handle story replies and story mentions. **Messenger:** postbacks and quick replies.
+- **Discord:** a bot for support servers/DMs (Gateway events, or interactions verified with Ed25519).
+- **Amazon buyer messages:** via the Amazon seller email relay into the email channel, with Amazon policy warnings (no external links/marketing).
+- **Klaviyo replies:** replies to Klaviyo email/SMS land in the inbox (Klaviyo webhook/integration).
+- **Custom channel API:** developers push inbound messages and receive outbound replies through signed webhooks.
+
 ### 6.9 Campaigns (email & in-chat marketing)
 - Audience = segment or filter. **One-off** (send now / schedule) or **automated** (trigger: event or attribute change + delay, e.g. "2 days after signed_up if plan = free").
 - Email editor (blocks: text, image, button, divider, columns; templates; variables with fallbacks; preview on desktop/mobile; test send). In-chat campaigns appear as a message in the widget the next time the contact visits.
@@ -440,10 +505,13 @@ General rules: each integration is a module with `validateConfig`, `connect` (OA
 
 ### 6.10 Analytics
 - Dashboards with a date-range picker and comparison to the previous period: conversations (new, resolved, by channel), **first response time** (median/p90), **resolution time**, **CSAT** (average, distribution, comments), messages sent/received, busiest hours **heatmap** (day × hour), per-operator performance table, per-team, tags breakdown, **AI agent resolution rate** and credits, campaign performance, help center views and failed searches.
+- **Report builder** (pick a metric, breakdowns, filters, chart type) and **shared dashboards** saved on the server for the whole team (not private, and not saved only in one browser).
+- **SLA reports** (achieved vs breached, by policy/team/operator), **agent activity** (online/away/idle time, conversations handled vs resolved, response times, and the "conversation in progress" timeline for each day), **topics** and **AI QA scores** over time, and **revenue influenced** (6.8.11).
+- **Raw exports** of conversations, messages, contacts and events (CSV, JSON, Parquet, with date filters), plus a full transcript export. **Data warehouse sync** (S3, BigQuery, Snowflake) on Scale. Scheduled reports by email.
 - Charts with an accessible color palette, tooltips, empty states, and CSV export. Nightly rollups into aggregate tables for speed.
 
 ### 6.11 Settings (dashboard)
-- **Workspace:** name, website URL, logo, timezone, language, Website ID (copy), delete workspace.
+- **Workspace:** name, logo, timezone, language, data region (EU/US, shown read-only), **brands** (add/edit brands, each with its Website ID and domain), **self-serve full data export** and **self-serve account/workspace deletion** (no support ticket needed).
 - **Chat widget:** appearance (live preview next to the form), texts, behavior (pre-chat email, live typing preview on/off, sounds, hide on mobile), **triggers / proactive messages**, allowed domains, **identity verification secret** (reveal/rotate).
 - **Installation:** snippet with copy button, plus tabs per platform (HTML, WordPress, Shopify, Wix, Webflow, Squarespace, GTM, React/Next.js) and a "Verify installation" check (detects the first widget load from that domain).
 - **Inbox:** office hours, routing rules, auto-assign mode, SLA targets, CSAT on/off, auto-resolve after X days of inactivity.
@@ -474,7 +542,7 @@ General rules: each integration is a module with `validateConfig`, `connect` (OA
 | Contacts / CRM | Unlimited contacts, 5 custom attributes | 20 attributes, segments | Unlimited attributes, companies, import/export | + custom roles, audit log | + SCIM |
 | Knowledge base | 1 help center, 30 articles, our subdomain, "Powered by" | Unlimited articles | Custom domain, multilingual | Multiple help centers | — |
 | Chatbot flows (active) | 1 | 3 | Unlimited | Unlimited | Unlimited |
-| AI agent resolutions / month | 50 (renews monthly, hard cap) | 150 | 500 | 1,500 | Committed volume |
+| AI agent resolutions / month | 50 (renews monthly, hard cap) | 200 | 600 | 2,000 | Committed volume |
 | AI copilot (drafts, rewrite, summaries, translation) | 50 actions / month | Included (fair use) | Included | Included | Included |
 | Campaigns | In-widget proactive messages only | 2,000 email sends / month | 10,000 | 50,000 | Custom |
 | Office hours, saved replies, tags, notes, mentions, CSAT | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -487,7 +555,8 @@ General rules: each integration is a module with `validateConfig`, `connect` (OA
 Why this beats the market, as a short "Why Parlo" block on the pricing page:
 - **3 free seats and unlimited conversations.** Tidio caps free at 50 conversations; Crisp gives 2 seats.
 - **An email inbox on Free.**
-- **WhatsApp and branding removal from $29.** Crisp gates them at much higher tiers.
+- **WhatsApp and branding removal from $29.** Crisp gates WhatsApp at $95 and branding removal at $295.
+- **Private notes, saved replies, search, office hours and an email inbox on Free.** Crisp's Free plan has none of these and only 2 seats.
 - **AI included every month**, not a one-time allowance.
 - **Copilot bundled** instead of $29+/seat.
 - **Capped AI spend**: no surprise bills.
@@ -499,7 +568,8 @@ Why this beats the market, as a short "Why Parlo" block on the pricing page:
 
 #### AI pricing (resolution-based, capped, honest)
 - **Definition of a resolution:** an AI agent conversation where the customer confirms it's solved, **or** the conversation ends with no human handoff and is not reopened within 24 hours. **Handoffs to a human are never charged.** Show this definition on the pricing page and in the billing screen.
-- Each plan includes resolutions (table above). Above that, paid plans pay **$0.49 per resolution** overage, or buy prepaid packs: 500 for $199 or 2,000 for $599 (~$0.30 each). That is far below the ~$1–2 per resolution of the big competitors.
+- Each plan includes resolutions (table above). Above that, paid plans pay **$0.15 per resolution** overage, or buy prepaid packs: 1,000 for $99 or 5,000 for $399 (~$0.08 each).
+- Why $0.15: Intercom charges about $0.99 and Zendesk $1.50–2.00 per resolution. Crisp bills tokens per AI *conversation* (roughly $0.05–0.10 each, resolved or not); its credits expire monthly and the bot stops when they run out. Parlo charges only for resolutions, is capped and predictable, and costs about the same as Crisp or less. **Founder: verify the real LLM cost per resolution in the super-admin and adjust `plans.ts`; keep AI gross margin above 60%.**
 - **Spend cap:** the default cap is 2× the included amount. Alerts go to owners at 80% and 100% (email and in-app). Owners can raise or lower the cap. Free plans have a hard cap with no overage: when it is reached, the AI hands off to humans and the dashboard shows "AI could have answered 23 more conversations this month — upgrade".
 - Unused included resolutions roll over **one** month.
 - Meter usage in a `UsageMeter` table (per workspace, per metric, per billing period) and report overage to Stripe usage-based billing (Billing Meters) at the end of each period.
@@ -566,10 +636,11 @@ Track these events and show the funnel in the super-admin:
 - `https://api.yourdomain.com/v1/...` with **API keys** (`Authorization: Bearer pk_live_…`, scopes like `conversations:read`, `conversations:write`, `contacts:read`, `contacts:write`, `messages:write`, `articles:read`), per-key rate limits (headers `X-RateLimit-*`), cursor pagination, consistent errors `{ error: { code, message } }`, and idempotency keys for POST.
 - Resources: workspaces (current), conversations (list/get/update/assign/resolve), messages (list/send/note), contacts (CRUD, search, events, data), companies, segments, tags, saved replies, articles, operators, webhooks.
 - An **OpenAPI 3.1 spec** generated from zod schemas, a rendered API reference in `/docs/api`, and copy-paste examples (curl, JS, Python).
+- **MCP server** (Phase 4), **read + write** with OAuth and the same scopes: list/search conversations, read a conversation, reply, add a note, tag, assign, look up contacts, search the knowledge base, and run AI actions. Customers can plug Parlo into Claude, ChatGPT or their own agents.
 - Phase 5: a **realtime API** (WebSocket) for customers' own bots, and an official Node SDK.
 
 ### 6.14 Super-admin back office (internal, `/admin`, staff only)
-- Search workspaces and users; view plan, usage and health; impersonate a user (time-limited, logged in the audit log, banner shown); disable abusive workspaces; feature flags per workspace; global announcement banner; job queue dashboard (Bull Board); webhook failure overview.
+- Search workspaces and users; view plan, usage and health; impersonate a user (time-limited, logged in the audit log, banner shown); **trust & safety queue** (automated signals may only *throttle*; suspending a workspace requires a human decision with a written reason sent to the owner, plus an appeal form; every case is stored in TrustSafetyCase); freemium funnel and PQL list (6.12); startup/partner program approvals; AI cost per resolution; feature flags per workspace; global announcement banner; job queue dashboard (Bull Board); webhook failure overview.
 
 ### 6.15 Phase-5 extras (Crisp parity and beyond)
 - **Status page** product: HTTP/TCP/ping monitors, a public status page per workspace (custom domain), incidents and maintenance, subscribers notified by email.
@@ -643,47 +714,129 @@ Track these events and show the funnel in the super-admin:
 ## 12. Build phases (do them in order; each ends with the Definition of Done in section 14)
 
 **Phase 0: Foundation**
-Monorepo, tooling (ESLint, Prettier, TypeScript strict, Husky + lint-staged), docker-compose, Prisma schema v1 + migrations, design system (tokens, components, light/dark), app shells (marketing layout, dashboard layout with icon rail), CI pipeline, error tracking, logging, the `.env.example`, README.
+- Monorepo, tooling (ESLint, Prettier, TypeScript strict, Husky + lint-staged), docker-compose, Prisma schema v1 + migrations (including Brand, Region, UsageMeter), design system (tokens, components, light/dark), app shells (marketing layout, dashboard layout with icon rail), CI pipeline, error tracking, logging, product analytics (PostHog), `.env.example`, README.
+- The **entitlements engine** and `plans.ts` (6.12).
+- `docs/PARITY.md` (copy of section 16) and `docs/COMPETITIVE_ANALYSIS.md` (section 13.4).
 
-**Phase 1: MVP (the product people can actually use)**
-- Auth (email/password, verify email, reset, Google OAuth, 2FA TOTP, active sessions), workspaces + workspace switcher, onboarding wizard, team invites, roles and Teams.
-- **Chat widget:** all of 6.3, including file/image uploads and the JavaScript SDK, **except** proactive triggers, CSAT rating and GA4 events (Phase 2), the knowledge-base tab and bot/AI cards (Phase 3), and mobile SDKs (Phase 5).
-- **Realtime shared inbox:** all of 6.4, including views, live typing preview, notes, @mentions, assign, resolve/reopen, snooze, tags, priority, saved replies with `/`, search, attachments, bulk actions, keyboard shortcuts, collision detection, notifications, sounds and browser push. **Except** AI tools (Phase 3), integration sidebar widgets, routing rules, office hours and SLA (Phase 2).
-- **Visitor email fallback**, both directions: build the core inbound/outbound email pipeline from 6.8.5 now; custom sending domains come in Phase 4.
-- Contacts list + contact profile + custom data + automatic merging when a visitor gives a known email + GDPR export/erase.
-- Settings: workspace, widget appearance with live preview, installation + verify, team, saved replies, tags, personal profile/password/notifications.
-- **Marketing site:** home, feature pages, pricing, About, Contact, legal templates, 404/500, SEO, `/docs` (installation + JavaScript SDK), `/blog` and `/changelog` each with a real launch post.
+**Phase 1: MVP (the product people can actually use, free plan live)**
+- Auth (email/password, verify email, reset, Google OAuth, 2FA TOTP, active sessions), workspaces + switcher, onboarding wizard (platform auto-detection), team invites, roles and Teams.
+- **Chat widget:** all of 6.3, including file/image uploads, identity verification, `user:id` session continuity and the JavaScript SDK, **except** the items section 16.1 assigns to later phases.
+- **Realtime shared inbox:** all of 6.4, including views, live typing preview, notes, @mentions, assign, open/pending/snoozed/resolved, tags, priority, saved replies with `/`, exact + full-text search, attachments, bulk actions, mark unread, keyboard shortcuts, collision detection, notifications, sounds and browser push. **Except** AI tools (Phase 3), integration sidebar widgets, routing rules, office hours and SLA (Phase 2).
+- **Delivery guarantee** + **unanswered-chat backup alert** (6.4.1).
+- **Visitor email fallback**, both directions (core inbound/outbound email pipeline from 6.8.5).
+- Contacts list + profile + custom data + automatic merging + GDPR export/erase.
+- Settings: workspace, widget appearance with live preview, installation + verify, team, saved replies, tags, personal profile/password/notifications, **self-serve data export and deletion**.
+- **Freemium foundations:** every workspace gets the 14-day Growth reverse trial and then Free. Free-plan limits are enforced by the entitlements engine. "Powered by Parlo" badge with `ref` tracking and the "Add free live chat" landing page. Activation events tracked. (Paid upgrades arrive with Stripe in Phase 2. Until then, locked features show "Available on paid plans soon — you're on the free plan".)
+- **Marketing site:** home, feature pages, pricing (6.12), About, Contact, legal templates **including the trust & safety policy**, 404/500, SEO, `/docs` (installation + JavaScript SDK), `/blog` and `/changelog` each with a real launch post.
 - **The full integrations marketplace** (6.1.1: every page plus catalog data).
-- The **WordPress plugin** (complete, including one-click connect and zip download), and all snippet-platform guides.
-- Seed data.
-- E2E tests 1, 2, 5 and 6.
+- The **WordPress plugin** (complete, with one-click connect and zip download) and all snippet-platform guides.
+- PWA install for operators. Seed data. E2E tests 1, 2, 5 and 6.
 
-**Phase 2: Channels, integrations & insights**
-WhatsApp (complete, including media and templates), Shopify app (OAuth, theme app embed, orders in the sidebar, compliance webhooks), Slack notifications, Microsoft Teams/Discord notifications, outbound webhooks (with retries, logs and replay), public REST API v1 with API keys + OpenAPI docs (`/docs/api`), analytics dashboards, office hours, routing rules and auto-assign, SLA timers, CSAT, proactive triggers in the widget, GA4/GTM events, file attachments on WhatsApp and other channels, integration sidebar widgets, E2E tests 3 and 4.
+**Phase 2: Monetization, channels, helpdesk & insights**
+- **Stripe billing + the complete freemium system** (6.12): checkout, portal, seats, upgrade moments/paywalls, AI cost calculator, referrals, localized/PPP prices, dunning, downgrade rules, comparison pages.
+- **Email channel** complete (Gmail/Microsoft 365 OAuth, forwarding, custom SMTP, custom domains with SPF/DKIM/DMARC, CC/BCC, outbound compose).
+- **WhatsApp** (complete, including media and templates).
+- **Shopify app** (OAuth, theme app embed, orders in the sidebar, compliance webhooks).
+- Slack/Teams/Discord notifications; outbound webhooks (retries, logs, replay); public REST API v1 + API keys + OpenAPI docs (`/docs/api`).
+- **Tickets, SLA policies, customer portal, contact form, side conversations, merge/split** (6.4.1).
+- **Inboxes (sub-inboxes)**, triage rule builder, routing + auto-assign, office hours, reminders, automations (time-based), AI-free spam filter v1.
+- **Analytics** (6.10): report builder, shared dashboards, SLA, agent activity, raw exports.
+- CSAT, proactive triggers, live visitors list + map, and the widget extras from 16.1 (dark mode, GIFs, voice notes, cookieless mode, vacation mode, other-channel buttons, email detection, block rules).
+- GA4/GTM events, file attachments on all channels, integration sidebar widgets. E2E tests 3 and 4.
 
-**Phase 3: Knowledge base & AI**
-Knowledge base editor + public help center (custom domains) + widget article search, AI copilot (suggest reply, rewrite, translate, summarize, auto-tag/sentiment), AI agent with sources (KB, crawler, files) + RAG + handoff + playground + analytics, chatbot visual builder, AI credit metering.
+**Phase 3: Knowledge base, AI & e-commerce**
+- Knowledge base editor + public help center (custom domains, visibility levels, versions, importers, AI translation) + widget article search + AI site-search overlay.
+- AI copilot (suggest reply, rewrite, translate, summarize, auto-tag/sentiment, voice-note transcription).
+- AI agent with sources + RAG + handoff + playground + **simulations** + observability.
+- **AI actions** (built-ins, Action builder, external MCP servers as tools, browser tools, approvals).
+- Learning from past conversations, knowledge gap detection, **AI QA**, **predicted CSAT**, **topic clustering**.
+- Chatbot builder + templates.
+- **E-commerce suite** (6.8.11): order actions, cart preview, AI shopping assistant, revenue attribution.
+- Model choice (incl. EU-hosted), AI metering, per-conversation caps, "AI live in 5 minutes" setup.
 
-**Phase 4: Growth & more channels**
-Stripe billing + plan entitlements + trial + dunning, full email channel with custom sending domains (SPF/DKIM/DMARC), Messenger, Instagram, Telegram, campaigns (one-off + automated), segments and CSV import/export, companies, contact merging UI, Slack app (reply from Slack), HubSpot, Mailchimp, Zapier app, WooCommerce orders, WhatsApp Embedded Signup, Shopify order actions, super-admin back office, installable operator PWA polish for mobile.
+**Phase 4: Growth, more channels & scale**
+- Campaigns (one-off + automated); segments, CSV import/export, companies, contact merging UI.
+- Messenger, Instagram, Telegram, LINE, Viber, X DMs, SMS, Amazon Messages, Klaviyo replies; **Slack Connect / Teams / Discord as support channels**; Slack app (reply from Slack); custom channel API.
+- **Multi-brand workspaces.**
+- HubSpot, Salesforce, Pipedrive, Zoho, Dynamics 365, Mailchimp, Klaviyo, Segment, PostHog, Mixpanel, Amplitude, Brevo, ActiveCampaign, Jira, Linear, GitHub, Trello, Notion, Stripe, Calendly/Cal.com, Zapier app, Make, Dialogflow.
+- WooCommerce, PrestaShop, Magento and WHMCS modules; WhatsApp commerce + Embedded Signup.
+- **Read/write MCP server**; data warehouse sync.
+- Partner/agency program, startup/nonprofit/open-source programs.
+- Super-admin back office with the trust & safety queue.
+- Custom roles, passkeys, SOC 2 readiness (Vanta/Drata), 30+ languages.
 
 **Phase 5: Parity+ and enterprise**
-Status page product, audio/video calls + screen share, co-browsing, operator mobile app (Expo) + desktop app, native mobile chat SDKs, SSO SAML/OIDC + SCIM, audit log UI, data residency, importers (Intercom/Zendesk/others), realtime public API + Node SDK, SMS (Twilio) and LINE/Viber channels.
+- Status page product; audio/video calls + screen share; co-browsing.
+- **Phone channel + AI voice receptionist**, plus Aircall/Ringover.
+- Native operator apps (Expo iOS/Android with AI copilot) and desktop apps (macOS, Windows, Linux); native chat SDKs (iOS, Android, React Native, Flutter).
+- SSO SAML/OIDC + SCIM, audit log UI, HIPAA option, multi-region data residency.
+- Importers (Intercom/Zendesk/Crisp/Freshchat/tawk.to); realtime API + official API libraries.
+- **App Marketplace for third-party developers**; standalone AI agent for other helpdesks; self-hosted Enterprise edition.
 
 ---
 
-## 13. Make it better than Crisp (build these into the phases above, then propose more)
+## 13. Crisp's gaps and how Parlo wins (build these into the phases, they are requirements, not ideas)
 
-1. **2-minute setup:** platform auto-detection from the website URL (WordPress/Shopify/Wix…) during onboarding, with tailored one-click instructions and a live "installation detected ✅" check.
-2. **AI-first, but honest:** a strong AI agent with citations and confident handoff; copilot everywhere; automatic two-way translation so any agent can support any language.
-3. **Fastest widget on the market:** < 35 KB, Shadow DOM, zero layout shift. Publish the benchmark on the website.
-4. **Unified customer timeline:** chats, emails, WhatsApp, orders (Shopify/WooCommerce), events and campaigns in one place.
-5. **Transparent, flat pricing** per workspace (not per seat on lower tiers), a generous free plan, and no surprise AI fees (clear credit meter).
-6. **Privacy-first:** EU hosting option, no third-party trackers in the widget, GDPR tools built in, and a public sub-processor list.
-7. **Developer-friendly:** clean REST API, signed webhooks with replay, OpenAPI, a typed SDK, and great docs.
-8. **Delightful details:** command palette, keyboard-first inbox, offline-tolerant operator app, smart snooze, and an "undo send" (5s).
-9. **Insights that matter:** automatic weekly email report for owners (volume, response times, CSAT, top questions, content gaps suggested as new articles).
-10. After Phase 5, write `docs/IDEAS.md` with 10 more prioritized ideas (impact vs effort) and implement the top 3.
+These come from real user reviews (G2, Capterra, GetApp, Trustpilot, Shopify App Store, Google Play, Product Hunt, Reddit) and competitor analysis, researched in October 2026. **Re-verify them in Phase 0** (section 13.4).
+
+### 13.1 Where Crisp is strong (match these, don't fall behind)
+- **EU data hosting** and a privacy-first image → offer **EU and US regions** from day one (choose at signup), list sub-processors publicly, and keep the AI on EU-hosted models for EU workspaces when possible.
+- **Very light, fast widget** (tiny main-thread cost) → our budget: < 35 KB gzipped, < 40 ms main-thread time, measured in CI with Lighthouse on a test page.
+- **Live translation, co-browsing, an MCP server, and AI "widget tools"** (the AI performs actions on the site) → all are in our spec (6.7, 6.13, 6.15). Ours must be better (13.3).
+- **Responsive human support** → offer in-app chat support on every paid plan, run by the founders on Parlo itself.
+
+### 13.2 Crisp's top weaknesses → our required answer
+
+| # | Crisp weakness (what users complain about) | Parlo's required answer |
+|---|---|---|
+| 1 | **Price cliffs**: plans were repackaged (a 4-seat plan went from $25 to $45; a plan went from 20 to 10 seats), there is a hard seat cap, and big jumps between tiers ($95 → $295) | Extra seats on **every** plan, no tier cliffs (6.12), a public **price-lock promise**: "your price won't change for 24 months; existing customers are grandfathered", and a public pricing changelog |
+| 2 | **AI credits run out and the bot silently stops**; unused credits expire; credits are consumed while testing the trial; real cost is unpredictable | Resolution-based pricing with included volume, **rollover, spend caps and 80/100% alerts**, testing in the playground/simulations is **never billed**, and a clear AI cost calculator (6.12) |
+| 3 | **Reliability**: replies not delivered, unstable notifications, duplicate conversations, glitchy app | **Delivery guarantee**: every message has sent → delivered → read states, automatic retries, and a visible alert to the operator on failure. A **notification health check** in settings (test push/email/sound). A **backup alert** (email/SMS) when a chat waits longer than X minutes with nobody online. **Automatic dedupe/merge** of duplicate conversations and contacts. Published uptime and latency targets, plus a public status page |
+| 4 | **Core features locked behind expensive tiers** (knowledge base, WhatsApp/social channels, branding removal, ticketing) | All channels + knowledge base + branding removal on the **cheapest paid plan** ($29); a generous Free plan (6.12) |
+| 5 | **Shallow reporting**: topline only, no SLA breakdown, no transcript/CSV export, no agent activity, private dashboards | A **report builder** with shared dashboards. **SLA reports**. **Agent activity** (online/away/idle time, handled vs resolved, response times). Conversation-level drill-down. **Raw export** (CSV/JSON/Parquet) of conversations, messages and contacts. A **warehouse sync** (S3, BigQuery, Snowflake) on Scale. Scheduled email reports |
+| 6 | **AI quality**: off-topic answers, weeks of tweaking, the AI does not learn from past conversations, weak copilot | (a) **Opt-in learning from past resolved conversations** (reviewed and approved before use). (b) **Simulations**: run the AI against 50+ real past questions and score it before going live. (c) **Knowledge gap detection** that drafts missing articles for approval. (d) **Confidence-based handoff**. (e) Answers with **citations**. (f) An "AI went live in 5 minutes" guided setup: paste your URL → crawl → test → publish |
+| 7 | **Unexplained account suspensions**, slow vendor support, account deletion only via a GDPR request | A **written trust & safety policy**: automated systems may only *throttle*; **suspension requires human review**, a written reason and an appeal path. **Self-serve data export and account deletion** in settings. A guaranteed human first response time on paid plans |
+| 8 | **Mobile app quality**: missed notifications, crashes, no AI on mobile | Operator mobile app (PWA first, native Expo app in Phase 5) at **feature parity** with the web inbox, **including AI copilot**, reliable push with fallback email/SMS, and offline drafts |
+| 9 | **Thin helpdesk**: no real tickets/SLA, no merge/split, no mark-as-unread, weak long-running conversations | **Tickets** (6.4.1): ticket types, SLA policies with business hours and breach alerts, merge/split, **side conversations** (email a supplier from inside a conversation), linked tickets, **mark as unread**, and a **customer portal** where customers see their tickets |
+| 10 | **No native phone / AI voice** | **Phone channel** (Twilio/Telnyx numbers): calls ring in the browser and the app, voicemail with transcripts, and an **AI voice receptionist** using the same knowledge base and actions, with transcripts in the inbox (Phase 5) |
+| 11 | **Shallow e-commerce** (Shopify is just an integration; no order actions, no revenue attribution) | **E-commerce suite** (6.8.11): order lookup, **actions with guardrails** (refund under $X, cancel, edit address, resend, discount code) from both the inbox and the AI agent, **cart preview**, product recommendations, an **AI shopping assistant**, and **revenue attribution** per conversation and per AI reply |
+| 12 | **Per-workspace billing punishes multi-brand teams and agencies** | **Multiple brands inside one workspace** (separate widget, help center, email address, branding and reports per brand) plus the agency program (6.12) |
+| 13 | **Compliance gaps** (no SOC 2 audit, no visible HIPAA BAA, limited SSO) | **SOC 2 Type II readiness from day one** (controls, policies, evidence collection via Vanta/Drata in Phase 4), a HIPAA-ready option with BAA (Enterprise), SAML + SCIM on Scale, audit logs, configurable retention |
+| 14 | **Lock-in**: the AI only works inside Crisp, no self-hosting | **Full data portability** (export everything, documented import/export formats), a **read/write MCP server**, the **AI agent available standalone** on top of other helpdesks (Zendesk/Freshdesk/Help Scout connectors, Phase 5), and an optional **self-hosted Enterprise edition** (Docker/Helm) |
+| 15 | **Cluttered UI, hard triggers/bots, weak search** (can't find exact order IDs) | An opinionated, calm default inbox. **Templates** for bots/triggers/campaigns. **Exact-match + full-text search** with filters (quotes for exact phrases, order IDs, emails, phone numbers). Contextual help and a product tour. Usability test every main flow (section 14) |
+
+### 13.3 "Beat them" features (all required, placed in phases in section 12)
+1. **Capped, resolution-based AI pricing** with verified resolutions (6.12).
+2. **AI actions library** (6.7): track order, refund/cancel/edit order (Shopify/WooCommerce/Stripe), reschedule booking, update billing details, create ticket, call any customer API via an **"Action builder"** (HTTP request + auth + input schema). Approval thresholds and a human-approval queue for risky actions.
+3. **AI QA**: automatically score 100% of human and AI conversations (tone, accuracy, resolution, policy compliance) with a coaching view per operator.
+4. **CSAT without surveys**: an AI-predicted satisfaction score for every conversation, alongside the real CSAT.
+5. **Topic clustering in every language**: see what customers ask about this week, trending issues, and spikes with alerts.
+6. **Live two-way translation** (the operator writes in their language; the customer reads theirs) on every channel, including email and WhatsApp.
+7. **Revenue attribution and an AI shopping assistant** for stores.
+8. **WhatsApp commerce**: product catalogs, template broadcasts to opted-in contacts, and click-to-WhatsApp ads tracking.
+9. **B2B support channels**: **Slack Connect** shared channels, **Microsoft Teams** and **Discord** as inbound channels (not just notifications), for B2B SaaS customers (Phase 4).
+10. **Read/write MCP server** with OAuth, so customers' own AI agents (and Claude/ChatGPT) can read conversations, reply, tag and look up contacts safely (Phase 4).
+11. **Delivery guarantee + backup alerts** (13.2 #3).
+12. **Multi-brand workspaces** (13.2 #12).
+13. **Real ticketing + customer portal** (13.2 #9).
+14. **Agent activity & light workforce management**: schedules, shifts, capacity, and auto-away when idle.
+15. **Data warehouse sync + raw exports** (13.2 #5).
+16. **2-minute setup**: detect the platform from the website URL during onboarding, show tailored one-click instructions, and a live "installation detected ✅" check.
+17. **"Paste your URL → AI agent live in 5 minutes"**: crawl, auto-generate FAQ snippets, simulate, publish.
+18. **Weekly AI insights email for owners**: volume, response times, CSAT, top topics, knowledge gaps with drafted articles to approve in one click.
+19. **Delightful details**: a command palette, a keyboard-first inbox, smart snooze, "undo send" (5s), message scheduling, and emoji reactions on messages.
+20. **Price-lock promise and transparent public pricing changelog.**
+
+### 13.4 Do your own competitive research (Phase 0, then before every phase)
+If you can browse the web:
+1. Read crisp.chat (features, pricing, integrations, changelog/blog) and the main competitors (Intercom/Fin, Tidio, tawk.to, Chatwoot, Zendesk, Freshchat, Gorgias, Help Scout, Front, LiveChat).
+2. Read recent reviews (G2, Capterra, Trustpilot, Reddit, Shopify App Store).
+3. Update `docs/COMPETITIVE_ANALYSIS.md` with: the feature parity table (section 16), new competitor features, and new complaints.
+4. Add any feature Parlo is missing to the parity checklist **and** to the right phase. Tell the founder in the phase report what you added and why.
+
+If you cannot browse, use sections 13 and 16 as the source of truth.
+
+After Phase 5, write `docs/IDEAS.md` with 10 more prioritized ideas (impact vs effort) and implement the top 3.
 
 ---
 
@@ -692,22 +845,154 @@ Status page product, audio/video calls + screen share, co-browsing, operator mob
 Before saying a phase is finished, you must:
 1. Have implemented **every** item listed for that phase, end to end (DB → API → UI → tests), with no placeholders.
 2. Pass `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` and `pnpm e2e` with 0 errors.
-3. Have started the full stack locally (`docker compose up` + `pnpm dev`), clicked through every new flow in a real browser on desktop and mobile widths, and checked that there are no console errors or broken layouts.
+3. Have started the full stack locally (`docker compose up` + `pnpm dev`), clicked through every new flow in a real browser on desktop and mobile widths, and checked that there are no console errors or broken layouts. Also walk each new flow as a **first-time user** (usability check): clear labels, helpful empty states that say what to do next, no dead ends, and no step that needs reading the docs.
 4. Have run the security checklist (section 10) for the new code.
-5. Have updated README, ARCHITECTURE, DECISIONS, CHANGELOG, `.env.example` and the `SETUP_*.md` docs.
-6. Have committed with clear messages.
-7. Post a **phase report** in this format:
+5. Have ticked every row of `docs/PARITY.md` (section 16) and every 13.2/13.3 item assigned to this phase, and enforced the right plan limits for every new feature through the entitlements engine.
+6. Have updated README, ARCHITECTURE, DECISIONS, CHANGELOG, `.env.example` and the `SETUP_*.md` docs.
+7. Have committed with clear messages.
+8. Post a **phase report** in this format:
    - ✅ What was built (bullet list mapped to this prompt's sections)
    - 🧪 Test results (counts, all green)
    - ▶️ How to run and what to click to see it working
    - 🔑 Credentials/accounts the founder must create for real-world use (with links to the SETUP docs)
    - ⚠️ Known limitations / decisions taken
+   - 📊 Parity status (rows done / total) and competitive findings from 13.4
    - ⏭️ What the next phase will do
 
 ## 15. Start now
 
-1. Restate in 10 bullet points what you are going to build (to prove you understood).
-2. Print the final repository tree for Phase 0 + Phase 1.
-3. Begin **Phase 0**, then continue straight into **Phase 1**. Stop only when Phase 1 meets the Definition of Done, and post the phase report.
+1. Restate in 10 bullet points what you are going to build (to prove you understood), including the freemium model.
+2. If you can browse the web, do the competitive research in 13.4 and list anything new you found.
+3. Print the final repository tree for Phase 0 + Phase 1.
+4. Begin **Phase 0**, then continue straight into **Phase 1**. Stop only when Phase 1 meets the Definition of Done, and post the phase report.
+
+---
+
+## 16. Appendix: Crisp feature parity checklist (every row is a requirement)
+
+Copy this table into `docs/PARITY.md` in Phase 0 and tick rows off as you build them. "✚" means Parlo must do **better** than Crisp, as described. Research date: October 2026 (Crisp's own changelog, help center, developer docs and GitHub). Phase numbers refer to section 12.
+
+### 16.1 Chat widget
+| Crisp feature | Parlo requirement | Phase |
+|---|---|---|
+| Launcher, welcome message, left/right position, colors, z-index | 6.3 customization with live preview ✚ (logo, launcher icon, brand per site) | 1 |
+| 60+ languages, locale overrides, automatic right-to-left text | i18n framework + 6 languages at launch, then 30+ via translation files; auto RTL; per-workspace text overrides | 1 → 4 |
+| Dark mode widget | Widget follows the visitor's system theme, or forced light/dark | 2 |
+| Hide when away / hide on mobile / vacation mode / availability tooltip | All four settings | 2 |
+| Lock maximized/full view, "safe mode" (CSS-conflict-proof) | Full-screen mode option; Shadow DOM makes safe mode the default ✚ | 1 |
+| Session continuity across devices (`tokenId`), session merge | `$parlo.push(["set","user:id", [id, signature]])` restores the same conversations on any device; anonymous sessions merge on identify | 1 |
+| Cookie domain & expiry; **total privacy / cookieless mode** | Cookie settings + a cookieless mode (memory/localStorage only, no tracking of page history) | 2 |
+| Text, files, images, emoji, quick replies, buttons/pickers, carousel, input fields | 6.3 + bot cards (6.7) | 1 / 3 |
+| **GIFs** and **audio messages** (record voice notes) | GIF picker (Tenor/Giphy, can be disabled) + voice notes with AI transcription shown to operators ✚ | 2 |
+| Contact form (when away, or as an alternative to chat) | "Send us a message" form that creates a ticket | 2 |
+| Show other channels in the chatbox | Buttons to continue on WhatsApp, Messenger, Instagram, Telegram, email or phone | 2 |
+| Detect & confirm email typed in a message | "Is this your email? ✓" chip that saves it to the contact | 2 |
+| Message triggers (open chatbox, show message, play sound, change quick replies) | 6.3 proactive triggers with templates ✚ | 2 |
+| **MagicType** (see what visitors type) | Live typing preview (6.3 / 6.4) | 1 |
+| **MagicMap** (live map of visitors) + visitor list & count | "Live visitors" page: list + world map of visitors on the site right now, with current page, source, and a "Start chat" button (proactive outbound message) | 2 |
+| Ratings (1–5 + comment) in chatbox and transcript emails | CSAT (6.3) + predicted CSAT ✚ | 2 / 3 |
+| Email transcripts (automatic/manual) | Transcript email on resolve (setting) + manual send | 1 |
+| Knowledge base search in widget; Overlay full-page AI site search | KB tab (6.6) + optional full-page "Ask AI" search overlay for the customer's site | 3 |
+| Widget homepage, launch AI from widget | Home tab (6.3) with AI entry point | 1 / 3 |
+| Identity verification (HMAC) | 6.3 identity verification | 1 |
+| Block visitors with rules | Block by IP range/country/email/domain/keyword; blocked visitors see the widget as away | 2 |
+| Widget Tools (AI runs actions in the visitor's browser) | `$parlo.push(["on","ai:tool:<name>", handler])`: the site registers browser-side tools the AI can call (e.g. open cart, fill form, navigate) ✚ with a typed schema | 3 |
+| Chat SDKs: web, iOS, Android, React Native, Flutter | Web SDK (1); native SDKs (5) | 1 / 5 |
+
+### 16.2 Inbox
+| Crisp feature | Parlo requirement | Phase |
+|---|---|---|
+| Shared inbox, states unresolved/pending/resolved | open / pending (waiting on customer) / snoozed / resolved | 1 |
+| Manual & automatic assignment, routing rules | 6.4 routing + round-robin/least-busy + capacity ✚ | 2 |
+| **Sub-inboxes** with their own members & access rules | **Inboxes** (e.g. Sales, Support, Billing): each with members, permissions, channels and routing; operators see only inboxes they belong to | 2 |
+| Triage rules (route by data, body, origin; block; set segments; AND/OR; email subject/"to") | Rule builder with AND/OR groups on any field (message text, channel, email to/subject, page, country, segment, custom data) → actions (route, assign, tag, priority, block, segment, auto-reply, close as spam) | 2 |
+| Private notes, @mentions, participants/CC, reminders | Notes + mentions (1); email CC/BCC participants (2); **reminders** ("remind me about this conversation tomorrow at 9") (2) | 1 / 2 |
+| Shortcuts (canned replies), keyboard shortcuts, filters, segments, search | 6.4 saved replies `/`, shortcuts, views, exact + full-text search ✚ | 1 |
+| Rich editor with blocks, embeds, RTL, date separators, jump to date | Composer with markdown, code blocks, images, link embeds, RTL; thread with date separators and "jump to date" | 1 / 2 |
+| Automations inbox (AI-handled work) + Review Mode + report good/bad AI answers | "AI" view listing every AI-handled conversation, a review queue with 👍/👎 and "correct the answer" that becomes a snippet ✚ | 3 |
+| Spam filter (AI) + spam decisions | AI spam classifier on inbound chat/email, spam folder, "not spam" feedback, auto-block repeat spammers | 2 |
+| Batch actions (resolve, read, route, delete, tag), mark unread, block, report | All, in 6.4 bulk actions + mark unread | 1 / 2 |
+| Sidebar: browsed pages, events, device, plugin widgets | 6.4 contact sidebar + integration widgets + marketplace app widgets (16.9) | 1 / 2 / 5 |
+| LiveTranslate | 2-way live translation on every channel (6.7) | 3 |
+| Email: forwarding from Gmail/Google Workspace/Outlook, custom sending domain (SPF/DKIM/DMARC), custom SMTP (e.g. SES), start outbound email | 6.8.5 + **direct Gmail and Microsoft 365 OAuth connection** (no forwarding needed) ✚ + custom SMTP + compose new outbound email | 2 |
+| Custom channels via plugins | Custom channel API: any developer can push inbound messages and receive outbound replies through webhooks (16.9) | 4 |
+
+### 16.3 CRM / contacts
+| Crisp feature | Parlo requirement | Phase |
+|---|---|---|
+| Profiles with company & job data, custom data, past conversations | 6.5 contacts + companies + job title | 1 / 4 |
+| Segments (incl. AI-assigned segments) | Rule-based segments + AI auto-segmenting (e.g. "lead", "churn risk") | 4 / 3 |
+| Events timeline with colors | Custom events via SDK/API with icon/color on the timeline | 2 |
+| Geolocation, device info, email subscription status | 6.5 + marketing consent status (subscribed/unsubscribed/bounced) | 1 / 4 |
+| CSV import/export, contact statistics | 6.5 import/export + stats (contacts by country/source/segment) | 4 |
+| Two-way CRM sync (HubSpot etc.) | 6.8.10 HubSpot + Salesforce, Pipedrive, Zoho CRM, Dynamics 365 | 4 |
+
+### 16.4 Knowledge base
+| Crisp feature | Parlo requirement | Phase |
+|---|---|---|
+| Multilingual + **automatic translation from a reference language** | 6.6 + one-click AI translation of articles, kept in sync when the source changes ✚ | 3 |
+| Custom domain, SEO, feedback, categories & sections | 6.6 | 3 |
+| **Import from other providers**, export, redirects | Importers (Zendesk Guide, Intercom Articles, Help Scout Docs, HTML/Markdown zip), export, 301 redirect manager | 3 |
+| Password/JWT-protected internal knowledge base | Visibility per article/category: public, logged-in customers (JWT/SSO), internal (operators only) | 3 |
+| Folders, drag & drop, version history with rollback | Editor with tree navigation, drag & drop ordering, version history + diff + rollback | 3 |
+| Turn closed conversations into articles | Knowledge gap detection + "Create article from conversation" (6.7) ✚ | 3 |
+
+### 16.5 Chatbots & automation (Crisp "Workflows")
+| Crisp feature | Parlo requirement | Phase |
+|---|---|---|
+| No-code builder (events, actions, conditions, AI handoff) | 6.7 visual chatbot builder | 3 |
+| Per-channel flows, start manually, start from the SDK | Flow triggers include channel, operator "Run flow" button, `$parlo.push(["do","flow:run",["id",{vars}]])` | 3 |
+| Templates (out-of-office, drip sequences…) | 20+ templates (lead qualification, out-of-office, order status, booking, feedback, onboarding drip) | 3 |
+| Dialogflow connector | Generic "external bot" connector (webhook) + Dialogflow | 4 |
+| Task automations | "Automations": when X happens → do Y (time-based too, e.g. auto-close after 3 days pending, SLA escalation) | 2 |
+
+### 16.6 AI (Crisp "Hugo")
+| Crisp feature | Parlo requirement | Phase |
+|---|---|---|
+| AI agent on web chat, WhatsApp, Messenger, Instagram, email | 6.7 AI agent on **every** channel, including voice (6.8.12) ✚ | 3 / 5 |
+| Training: crawl, KB, files (PDF/CSV/TXT), Q&A snippets, guided instructions | 6.7 sources + DOCX/Notion/Google Docs ✚ + guided setup | 3 |
+| Guardrails, escalation, routing to flows/humans, topic detection | 6.7 guardrails + confidence handoff + topics | 3 |
+| Playground, observability & debugging, setup reviews | Playground + **simulations** ✚ + per-answer trace (sources, tools called, latency, cost) | 3 |
+| External MCP servers as AI tools (with email/SMS OTP identity checks) + Widget Tools | AI actions (6.7): built-ins, Action builder, **external MCP servers as tools**, browser tools, OTP identity check, approval queue ✚ | 3 |
+| Personalization (segments, custom data, location, device) | AI answers use contact profile, segments, custom data, order data | 3 |
+| Model choice (OpenAI, Anthropic, Google, Mistral, EU-hosted model) | Provider-agnostic layer (3); workspace can choose the provider/model, including an EU-hosted option | 3 |
+| Copilot: summarize, draft replies, handover notes, citations; writing assistant; auto-tagging; audio transcription | 6.7 copilot (all) ✚ + copilot on mobile | 3 |
+| Per-conversation AI spend cap | Per-conversation cap + monthly spend cap (6.12) | 3 |
+| AI key metrics dashboard, escalation rate, "saved time" | AI analytics: resolution rate, escalation rate, saved time, cost, top unanswered topics | 3 |
+| *(Crisp lacks)* learning from past conversations, AI QA, predicted CSAT, multilingual topics, AI shopping assistant | 6.7 / 6.8.11 ✚ | 3 |
+
+### 16.7 Campaigns, status page, analytics
+| Crisp feature | Parlo requirement | Phase |
+|---|---|---|
+| One-off & automated campaigns by chat or email, segment targeting | 6.9 | 4 |
+| HTML templates + visual builder, variables, event data in subject/body | 6.9 block editor + raw HTML mode + variables incl. event data | 4 |
+| Test send, pause/resume, recipient list, stats (open/click/unsubscribe) + export | 6.9 + pause/resume + recipient list + export | 4 |
+| Status page: HTTP/S, TCP, ICMP checks, push reporters (Node/Go/Rust/Python), local agent for internal hosts, nodes, thresholds, custom domain, announcements, alerts (apps, Pushover) | 6.15 status page with all of these + alerts by email/SMS/Slack/push and **incident updates posted automatically to the widget** ✚ | 5 |
+| Prebuilt reports, custom dashboards (summary, chart, articles, map, heat map, operators, rating), split by office hours, filters | 6.10 report builder with all chart types incl. map and heat map, office-hours split | 2 |
+| Dashboard export/import, templates, shared dashboards | 6.10 shared dashboards + JSON export/import + templates | 2 |
+| *(Crisp lacks)* raw transcript/CSV export, SLA reports, agent activity, warehouse sync | 6.10 ✚ | 2 / 4 |
+
+### 16.8 Team, security, apps, channels
+| Crisp feature | Parlo requirement | Phase |
+|---|---|---|
+| Roles Owner/Admin/Member, operator teams, availability, last active | 6.2 Owner/Admin/Agent + Teams + **custom roles** (Scale) ✚ | 1 / 4 |
+| Multiple workspaces | 6.2 + **multiple brands per workspace** ✚ | 1 / 4 |
+| 2FA (authenticator app or SMS) | TOTP (1) + SMS/WebAuthn passkeys ✚ (4) | 1 / 4 |
+| EU hosting, GDPR + DPA, cookieless mode, EU AI model option | EU/US regions, DPA, cookieless mode, EU model option | 1 / 2 / 3 |
+| *(Crisp lacks)* SOC 2 audit, HIPAA BAA, SAML/SCIM | 13.2 #13 ✚ | 4 / 5 |
+| Web app, desktop (macOS, Windows), iOS & Android apps with push | PWA (1); native mobile (Expo) + desktop for macOS, Windows **and Linux** ✚ (5) | 1 / 5 |
+| Channels: web chat, in-app chat, email, WhatsApp, Messenger, Instagram (incl. story replies), X/Twitter DMs, Telegram, LINE, Viber, SMS (Twilio), Discord, Slack, phone (Aircall/Ringover), Klaviyo replies, Amazon buyer messages, contact form, ticket portal, custom channels | Web chat + email (1/2); WhatsApp (2); Messenger, Instagram incl. story replies/mentions, Telegram, LINE, Viber, X DMs, SMS, Discord, Slack Connect, Teams, Klaviyo replies, Amazon Messages, custom channels (4); native phone + Aircall/Ringover (5); contact form + customer portal (2) | 1–5 |
+
+### 16.9 Developer platform & marketplace
+| Crisp feature | Parlo requirement | Phase |
+|---|---|---|
+| REST API with token tiers (user / website / plugin), dev vs prod tokens, scopes | 6.13 API keys with scopes + OAuth apps for third-party developers + test-mode keys | 2 / 5 |
+| RTM (realtime WebSocket) API | Realtime API (6.13) | 5 |
+| Web hooks (website hooks + plugin hooks) | 6.8.8 webhooks with retries, logs, replay ✚ | 2 |
+| API libraries: Node, Go, PHP, Python, Ruby | Official SDKs generated from OpenAPI: Node/TypeScript, Python, PHP, Go, Ruby | 5 |
+| **Plugin marketplace** for third-party developers (sidebar widgets defined in JSON, plugin settings, paid plugins with usage-based billing) | **Parlo App Marketplace**: developers register OAuth apps; apps can add inbox sidebar cards (JSON UI kit), settings pages, custom channels, AI actions; listed in the integrations marketplace; paid apps with revenue share | 5 |
+| MCP server | Read **and write** MCP server with OAuth ✚ (6.13) | 4 |
+| Conversation importer | Importers from Intercom, Zendesk, Crisp, Freshchat, tawk.to (CSV/API) | 5 |
+| Status reporters (Node/Go/Rust/Python) | Push reporters in Node and Python + generic HTTP push endpoint | 5 |
 
 # ===================== PROMPT END =====================
