@@ -1,0 +1,56 @@
+# OmniRoute: self-hosted AI gateway (one OpenAI-compatible API in front of many LLM providers).
+#
+#   cd omniroute
+#   cp .env.example .env     # then edit INITIAL_PASSWORD (required; OmniRoute rejects the default CHANGEME)
+#   docker compose up -d
+#   open http://localhost:20128        (dashboard)
+#   base URL for the app: http://localhost:20128/v1
+#
+# Login password is INITIAL_PASSWORD from .env.
+# Ports bind to 127.0.0.1 only. Before exposing it anywhere else, set REQUIRE_API_KEY=true and a strong password.
+
+services:
+  omniroute-redis:
+    image: docker.io/library/redis:8.6.5-alpine
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  omniroute:
+    image: diegosouzapw/omniroute:3.8.51
+    container_name: omniroute
+    restart: unless-stopped
+    stop_grace_period: 40s
+    environment:
+      - DATA_DIR=/app/data
+      - REDIS_URL=redis://omniroute-redis:6379
+      - REQUIRE_API_KEY=${REQUIRE_API_KEY:-false}
+      - INITIAL_PASSWORD=${INITIAL_PASSWORD:?Set INITIAL_PASSWORD in omniroute/.env (copy .env.example)}
+      - OMNIROUTE_MEMORY_MB=${OMNIROUTE_MEMORY_MB:-1024}
+    ports:
+      - "${APP_BIND_HOST:-127.0.0.1}:20128:20128"
+      - "${APP_BIND_HOST:-127.0.0.1}:20129:20129"
+      - "${APP_BIND_HOST:-127.0.0.1}:20132:20132"
+    volumes:
+      # Named volume (not a ./data bind mount): the container runs as uid 1000, and a bind mount
+      # created by Docker on Linux is owned by root, which breaks writes to the SQLite database.
+      - omniroute-data:/app/data
+    depends_on:
+      omniroute-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.mjs"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  redis-data:
+  omniroute-data:
