@@ -4,6 +4,7 @@ Audit of `http://gravipack.fr/` → live brand store `gravipack.com`, run with t
 
 | File | What it is |
 |---|---|
+| **[RAPPORT-SEO-GRAVIPACK-FR.html](RAPPORT-SEO-GRAVIPACK-FR.html)** / `.pdf` | **Version française simplifiée pour la direction**: l'essentiel en une minute, les notes expliquées, les 45 points (problème, enjeu, effet sur Google et les IA, actions, responsable, calendrier), le plan d'action, les indicateurs et un lexique. |
 | [FULL-AUDIT-REPORT.md](FULL-AUDIT-REPORT.md) | Executive summary, scores, and all 45 findings. Each finding has its severity, impact (1-10), effort, evidence, why it matters, effect on SEO, a step-by-step fix, and checks for monitoring and falsifiability. |
 | [ACTION-PLAN.md](ACTION-PLAN.md) | The findings sequenced into phases (Day 1 → Week 1 → Weeks 2-3 → Month 2 → Ongoing), with owners, dependencies and KPIs. |
 | [ONSITE-AUDIT-PENDING.md](ONSITE-AUDIT-PENDING.md) | The checks that need the live site (blocked in the audit sandbox), with the exact `/seo` commands to run. |
