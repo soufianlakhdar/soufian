@@ -72,13 +72,13 @@ Target customers: startups, SaaS companies, e-commerce stores (Shopify / WooComm
 | Chat widget | **TypeScript + Preact**, built with Vite in library mode into a single file **`l.js`**, under **35 KB gzipped**, rendered inside **Shadow DOM** so the host site's CSS can never break it |
 | Validation | **zod** schemas shared between API, web and widget |
 | Payments | **Stripe** (Checkout, Customer Portal, webhooks, Stripe Tax) |
-| AI | Provider-agnostic LLM layer. Default **Anthropic Claude API** (latest Sonnet-class model for quality, latest Haiku-class model for cheap/fast tasks), with an OpenAI-compatible adapter. Model names come from env vars |
+| AI | Provider-agnostic LLM layer that talks only to an **OpenAI-compatible endpoint**. Default endpoint is **OmniRoute** (self-hosted AI gateway, run with Docker, see "LLM gateway" below), which routes to Anthropic Claude, OpenAI, Google, Mistral and others with fallbacks. Use a Sonnet-class model for quality and a Haiku-class model for cheap/fast tasks. Base URL, API key and model names all come from env vars, so any other OpenAI-compatible endpoint also works |
 | Realtime calls (later phase) | **WebRTC** via LiveKit (self-hostable) |
 | Testing | **Vitest** (unit/integration), **Playwright** (end-to-end, including the widget on a fake customer site), **Supertest** for API |
 | Observability | Structured logs (pino), **Sentry**, OpenTelemetry traces, `/health` and `/ready` endpoints |
-| Local dev | **docker-compose**: postgres (with pgvector), redis, minio, mailpit |
+| Local dev | **docker-compose**: postgres (with pgvector), redis, minio, mailpit, **omniroute** (LLM gateway, with its own redis) |
 | CI | **GitHub Actions**: install → lint → typecheck → test → build → e2e |
-| Deploy | Dockerfiles for every app; document deploys to Fly.io/Render/Railway **and** AWS. Serve the widget from a CDN with versioned files |
+| Deploy | Dockerfiles for every app; document deploys to Fly.io/Render/Railway **and** AWS, including the OmniRoute container with a persistent volume. Serve the widget from a CDN with versioned files |
 
 ### Repository layout
 
@@ -93,7 +93,7 @@ Target customers: startups, SaaS companies, e-commerce stores (Shopify / WooComm
   /shared      zod schemas, TypeScript types, realtime event names, constants, integrations catalog data
   /ui          Shared design-system components
   /emails      React Email templates
-  /llm         LLM provider abstraction + prompts
+  /llm         OpenAI-compatible LLM client (points at OmniRoute) + prompts
 /integrations
   /wordpress   WordPress plugin "Parlo Live Chat" (PHP), packaged as a zip
   /shopify     Shopify app (Shopify CLI project with a theme app extension)
@@ -102,6 +102,14 @@ docker-compose.yml, .env.example, README.md, CHANGELOG.md
 ```
 
 **URLs:** marketing site `yourdomain.com`; dashboard `app.yourdomain.com` (or `/app`); API `api.yourdomain.com`; widget `client.yourdomain.com/l.js`; help centers `help.yourdomain.com/{workspace}` plus optional custom domains. The dashboard calls the API same-site (proxy `/api/*` through Next.js rewrites) so session cookies stay first-party.
+
+**LLM gateway (OmniRoute, run with Docker).** Every LLM call (chatbot, copilot, summaries, auto-tagging, embeddings) goes through one self-hosted [OmniRoute](https://github.com/diegosouzapw/OmniRoute) container instead of calling each provider directly. It exposes one OpenAI-compatible API and handles provider keys, fallbacks and routing, so provider limits are handled in one place.
+
+- **docker-compose:** add an `omniroute` service using the published image `diegosouzapw/omniroute`, **pinned to a specific version tag** (not `latest`, because migrations run on boot) and recorded in `docs/DECISIONS.md`. Give it its own `redis` service (`omniroute-redis`) with `REDIS_URL=redis://omniroute-redis:6379`, a bind mount `./data/omniroute:/app/data` (add `data/` to `.gitignore`) with `DATA_DIR=/app/data`, a `restart: unless-stopped` policy and the image's own healthcheck (`node healthcheck.mjs`). Start `omniroute` only after its redis is healthy. Ports: dashboard and `/v1` API on `20128`, API `20129`, live WebSocket `20132`.
+- **Safe defaults:** bind all OmniRoute ports to `127.0.0.1` locally (`APP_BIND_HOST`). Set `REQUIRE_API_KEY=true` and a strong `INITIAL_PASSWORD` for any non-local deploy, and never expose it publicly without that. Set `OMNIROUTE_MEMORY_MB` (default `2048`). Add a note that the dashboard is where the founder adds provider keys (Anthropic, OpenAI, and so on) and creates the gateway API key.
+- **Wiring:** `packages/llm` is a small OpenAI-compatible client driven only by env vars: `LLM_BASE_URL` (`http://omniroute:20128/v1` inside compose, `http://localhost:20128/v1` from the host), `LLM_API_KEY` (the gateway key created in the OmniRoute dashboard), `LLM_MODEL_SMART`, `LLM_MODEL_FAST` and `LLM_MODEL_EMBEDDING`. No provider name is hard-coded anywhere in the app. Calling `GET {LLM_BASE_URL}/models` on startup is the readiness check behind `/ready`.
+- **Tests and fallback:** unit and integration tests use a fake OpenAI-compatible server (fixtures), never a real gateway. If `LLM_BASE_URL` is unset or the gateway is down, AI features show a clear "AI is not configured" or "AI is temporarily unavailable" state and the inbox keeps working.
+- **Docs:** write `docs/SETUP_OMNIROUTE.md` (start the container, set the admin password, add provider keys, create the gateway key, put the values in `.env`, pin and upgrade the image, back up `./data/omniroute`) and add the new variables to `.env.example`.
 
 ---
 
@@ -955,7 +963,7 @@ Copy this table into `docs/PARITY.md` in Phase 0 and tick rows off as you build 
 | Playground, observability & debugging, setup reviews | Playground + **simulations** ✚ + per-answer trace (sources, tools called, latency, cost) | 3 |
 | External MCP servers as AI tools (with email/SMS OTP identity checks) + Widget Tools | AI actions (6.7): built-ins, Action builder, **external MCP servers as tools**, browser tools, OTP identity check, approval queue ✚ | 3 |
 | Personalization (segments, custom data, location, device) | AI answers use contact profile, segments, custom data, order data | 3 |
-| Model choice (OpenAI, Anthropic, Google, Mistral, EU-hosted model) | Provider-agnostic layer (3); workspace can choose the provider/model, including an EU-hosted option | 3 |
+| Model choice (OpenAI, Anthropic, Google, Mistral, EU-hosted model) | Provider-agnostic layer behind the OmniRoute gateway (3); workspace can choose the provider/model, including an EU-hosted option | 3 |
 | Copilot: summarize, draft replies, handover notes, citations; writing assistant; auto-tagging; audio transcription | 6.7 copilot (all) ✚ + copilot on mobile | 3 |
 | Per-conversation AI spend cap | Per-conversation cap + monthly spend cap (6.12) | 3 |
 | AI key metrics dashboard, escalation rate, "saved time" | AI analytics: resolution rate, escalation rate, saved time, cost, top unanswered topics | 3 |
