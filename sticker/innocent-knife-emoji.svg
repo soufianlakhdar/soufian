@@ -1,0 +1,251 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Skin -->
+    <radialGradient id="skin" cx="0.40" cy="0.30" r="0.78">
+      <stop offset="0" stop-color="#FFF3A0"/>
+      <stop offset="0.30" stop-color="#FFDF55"/>
+      <stop offset="0.72" stop-color="#FFC730"/>
+      <stop offset="1" stop-color="#F09A12"/>
+    </radialGradient>
+    <linearGradient id="skinShade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0.55" stop-color="#E07800" stop-opacity="0"/>
+      <stop offset="1" stop-color="#D86A00" stop-opacity="0.35"/>
+    </linearGradient>
+    <radialGradient id="skinSmall" cx="0.38" cy="0.35" r="0.8">
+      <stop offset="0" stop-color="#FFE873"/>
+      <stop offset="0.6" stop-color="#FFC630"/>
+      <stop offset="1" stop-color="#EA9010"/>
+    </radialGradient>
+    <linearGradient id="neck" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D98208"/>
+      <stop offset="0.6" stop-color="#F2A81E"/>
+      <stop offset="1" stop-color="#F8B526"/>
+    </linearGradient>
+    <radialGradient id="faceGloss" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Hair -->
+    <linearGradient id="hair" x1="0" y1="0" x2="0.2" y2="1">
+      <stop offset="0" stop-color="#8A5530"/>
+      <stop offset="0.55" stop-color="#5E3519"/>
+      <stop offset="1" stop-color="#43230F"/>
+    </linearGradient>
+    <linearGradient id="hairGloss" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#FFE2C2" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Eyes -->
+    <radialGradient id="iris" cx="0.4" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#6A4126"/>
+      <stop offset="1" stop-color="#2A160A"/>
+    </radialGradient>
+    <linearGradient id="eyeWhite" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9E4E0"/>
+      <stop offset="0.5" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F4F0EC"/>
+    </linearGradient>
+    <linearGradient id="lid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFD240"/>
+      <stop offset="1" stop-color="#F7AE22"/>
+    </linearGradient>
+
+    <!-- Cheeks -->
+    <radialGradient id="blush" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FF6F7D" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#FF6F7D" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Shirt -->
+    <linearGradient id="shirt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6CC0FA"/>
+      <stop offset="0.6" stop-color="#3D93E6"/>
+      <stop offset="1" stop-color="#2A72C8"/>
+    </linearGradient>
+    <radialGradient id="shirtGloss" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="sleeve" x1="0" y1="0" x2="1" y2="0.25">
+      <stop offset="0" stop-color="#2C74C6"/>
+      <stop offset="1" stop-color="#52A8EF"/>
+    </linearGradient>
+    <linearGradient id="sleeveR" x1="1" y1="0" x2="0" y2="0.25">
+      <stop offset="0" stop-color="#2264B4"/>
+      <stop offset="1" stop-color="#4699E6"/>
+    </linearGradient>
+    <!-- forearms bending away behind the back get darker toward the hem -->
+    <linearGradient id="armBack" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0.45" stop-color="#103E78" stop-opacity="0"/>
+      <stop offset="1" stop-color="#103E78" stop-opacity="0.45"/>
+    </linearGradient>
+
+    <!-- Knife -->
+    <linearGradient id="blade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8E99A6"/>
+      <stop offset="0.18" stop-color="#E9EEF3"/>
+      <stop offset="0.45" stop-color="#C3CCD6"/>
+      <stop offset="0.75" stop-color="#F7F9FB"/>
+      <stop offset="1" stop-color="#9AA5B1"/>
+    </linearGradient>
+    <linearGradient id="bolster" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6E7884"/>
+      <stop offset="0.4" stop-color="#D5DCE3"/>
+      <stop offset="1" stop-color="#6A7480"/>
+    </linearGradient>
+    <linearGradient id="handle" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#121417"/>
+      <stop offset="0.35" stop-color="#3B4047"/>
+      <stop offset="1" stop-color="#0B0C0E"/>
+    </linearGradient>
+    <linearGradient id="blood" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E8283C"/>
+      <stop offset="1" stop-color="#A3071C"/>
+    </linearGradient>
+    <!-- shadow the arm casts on the blade where it slips behind him (knife-local coords) -->
+    <linearGradient id="bladeTuck" gradientUnits="userSpaceOnUse" x1="0" y1="-44" x2="0" y2="-88">
+      <stop offset="0" stop-color="#1E2A3A" stop-opacity="0.65"/>
+      <stop offset="1" stop-color="#1E2A3A" stop-opacity="0"/>
+    </linearGradient>
+
+    <filter id="soft" x="-30%" y="-80%" width="160%" height="260%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+
+    <clipPath id="aboveHem"><rect x="0" y="0" width="560" height="500"/></clipPath>
+    <clipPath id="bladeClip"><path d="M -14 2 L -14 -148 Q -14 -170 -9 -184 Q 13 -142 21 -82 L 22 2 Z"/></clipPath>
+    <clipPath id="clipL"><ellipse cx="200" cy="212" rx="25" ry="28"/></clipPath>
+    <clipPath id="clipR"><ellipse cx="312" cy="212" rx="25" ry="28"/></clipPath>
+  </defs>
+
+  <g transform="translate(239 254) scale(0.88) translate(-262 -276)">
+
+    <!-- ============ KNIFE (tucked behind his back, peeking out) ============ -->
+    <g clip-path="url(#aboveHem)">
+      <g transform="translate(352 478) rotate(33) scale(1.4)">
+        <!-- handle (hidden behind the torso) -->
+        <rect x="-15" y="8" width="30" height="92" rx="12" fill="url(#handle)"/>
+        <!-- blade -->
+        <path d="M -14 2 L -14 -148 Q -14 -170 -9 -184 Q 13 -142 21 -82 L 22 2 Z" fill="url(#blade)" stroke="#7D8894" stroke-width="1.4" stroke-linejoin="round"/>
+        <g clip-path="url(#bladeClip)">
+          <!-- cutting edge bevel -->
+          <path d="M 12 2 L 12 -80 Q 6 -136 -8 -176 Q 13 -142 21 -82 L 22 2 Z" fill="#FFFFFF" opacity="0.55"/>
+          <!-- tiny blood smear (a little wipe near the edge) -->
+          <path d="M 2 -118 C 6 -121 12 -119 15 -113 C 17 -109 18 -105 17.5 -102 C 15 -104 12 -106 9 -107 C 6 -108 3 -110 1.5 -113 C 0.5 -115 0.8 -117 2 -118 Z" fill="url(#blood)"/>
+          <path d="M -3 -112 C 0 -111 3 -110 5 -108" stroke="#C3162C" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.7"/>
+          <path d="M 15.5 -104 C 17 -101 17.5 -98 17 -95.5 C 15.8 -96.5 15.2 -99 15.5 -104 Z" fill="#A3071C"/>
+          <!-- arm's shadow on the blade -->
+          <rect x="-20" y="-100" width="50" height="104" fill="url(#bladeTuck)"/>
+        </g>
+        <!-- spine highlight -->
+        <path d="M -11 -60 L -11 -146" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" opacity="0.8"/>
+        <!-- sharp glint near the tip -->
+        <path d="M 4 -150 l 2.2 -6 l 2.2 6 l 6 2.2 l -6 2.2 l -2.2 6 l -2.2 -6 l -6 -2.2 Z" fill="#FFFFFF" opacity="0.95"/>
+        <!-- bolster -->
+        <rect x="-17" y="0" width="41" height="12" rx="4" fill="url(#bolster)"/>
+      </g>
+    </g>
+
+    <!-- ============ BODY ============ -->
+    <!-- neck -->
+    <rect x="224" y="318" width="64" height="60" rx="18" fill="url(#neck)"/>
+
+    <!-- torso: elbows bent back, hands hidden behind him -->
+    <path d="M 152 506
+             Q 126 506 120 480
+             C 115 458 116 432 126 410
+             C 142 380 172 366 214 362
+             L 298 362
+             C 340 366 370 380 386 410
+             C 396 432 397 458 392 480
+             Q 386 506 360 506 Z" fill="url(#shirt)"/>
+    <!-- left arm -->
+    <path d="M 152 506 Q 126 506 120 480 C 115 458 116 432 126 410 C 136 392 150 382 164 376
+             C 170 404 174 440 172 470 C 171 486 176 498 186 506 Z" fill="url(#sleeve)"/>
+    <path d="M 152 506 Q 126 506 120 480 C 115 458 116 432 126 410 C 136 392 150 382 164 376
+             C 170 404 174 440 172 470 C 171 486 176 498 186 506 Z" fill="url(#armBack)"/>
+    <!-- right arm -->
+    <path d="M 360 506 Q 386 506 392 480 C 397 458 396 432 386 410 C 376 392 362 382 348 376
+             C 342 404 338 440 340 470 C 341 486 336 498 326 506 Z" fill="url(#sleeveR)"/>
+    <path d="M 360 506 Q 386 506 392 480 C 397 458 396 432 386 410 C 376 392 362 382 348 376
+             C 342 404 338 440 340 470 C 341 486 336 498 326 506 Z" fill="url(#armBack)"/>
+    <!-- arm creases -->
+    <path d="M 164 376 C 170 404 174 440 172 470 C 171 486 176 498 186 506" stroke="#1F5CA6" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.65"/>
+    <path d="M 348 376 C 342 404 338 440 340 470 C 341 486 336 498 326 506" stroke="#1B56A0" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.65"/>
+    <path d="M 128 452 Q 140 462 150 458" stroke="#1F5CA6" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.45"/>
+    <path d="M 384 452 Q 372 462 362 458" stroke="#1B56A0" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.45"/>
+    <!-- shirt gloss -->
+    <ellipse cx="236" cy="414" rx="58" ry="22" fill="url(#shirtGloss)"/>
+    <!-- head's soft shadow on the chest -->
+    <ellipse cx="256" cy="372" rx="62" ry="12" fill="#0E3D7A" opacity="0.35" filter="url(#soft)"/>
+    <!-- crew-neck collar -->
+    <path d="M 214 362 Q 256 404 298 362" stroke="#2A6FC0" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M 216 360 Q 256 398 296 360" stroke="#8FD0FF" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.7"/>
+
+    <!-- ============ HEAD (tilted a little, innocently) ============ -->
+    <g transform="rotate(-5 256 340)">
+      <!-- ears -->
+      <ellipse cx="112" cy="222" rx="22" ry="30" fill="url(#skinSmall)"/>
+      <ellipse cx="114" cy="223" rx="11" ry="17" fill="#E68F10" opacity="0.55"/>
+      <ellipse cx="400" cy="222" rx="22" ry="30" fill="url(#skinSmall)"/>
+      <ellipse cx="398" cy="223" rx="11" ry="17" fill="#E68F10" opacity="0.55"/>
+
+      <!-- face -->
+      <ellipse cx="256" cy="205" rx="146" ry="150" fill="url(#skin)"/>
+      <ellipse cx="256" cy="205" rx="146" ry="150" fill="url(#skinShade)"/>
+
+      <!-- hair: short, neat, ordinary -->
+      <path d="M 112 214
+               C 100 128 160 52 258 50
+               C 352 52 414 124 400 214
+               C 397 194 392 176 384 160
+               C 372 142 350 132 326 128
+               C 300 124 276 128 252 124
+               C 222 120 190 124 164 138
+               C 140 152 124 178 112 214 Z" fill="url(#hair)"/>
+      <!-- side-swept fringe -->
+      <path d="M 330 127 C 304 142 262 144 228 132 C 262 126 300 118 330 127 Z" fill="url(#hair)"/>
+      <!-- hair gloss / strands -->
+      <path d="M 168 92 C 210 66 280 64 330 86" stroke="url(#hairGloss)" stroke-width="12" fill="none" stroke-linecap="round"/>
+      <path d="M 154 124 C 196 100 250 96 300 104" stroke="#2E170A" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.35"/>
+
+      <!-- forehead gloss -->
+      <ellipse cx="222" cy="160" rx="58" ry="20" fill="url(#faceGloss)" opacity="0.8"/>
+
+      <!-- eyebrows: raised, innocent -->
+      <path d="M 170 168 Q 196 150 226 162" stroke="#5A3218" stroke-width="9" fill="none" stroke-linecap="round"/>
+      <path d="M 286 160 Q 316 146 342 164" stroke="#5A3218" stroke-width="9" fill="none" stroke-linecap="round"/>
+
+      <!-- eyes: side-glance with slightly lowered lids (suspicious) -->
+      <ellipse cx="200" cy="212" rx="25" ry="28" fill="url(#eyeWhite)"/>
+      <g clip-path="url(#clipL)">
+        <circle cx="216" cy="218" r="15" fill="url(#iris)"/>
+        <circle cx="220" cy="211" r="5" fill="#FFFFFF"/>
+        <circle cx="212" cy="225" r="2.2" fill="#FFFFFF" opacity="0.8"/>
+        <path d="M 170 178 L 230 178 L 230 203 Q 200 196 170 206 Z" fill="url(#lid)"/>
+      </g>
+      <path d="M 175 205 Q 200 195 225 202" stroke="#3A200D" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+
+      <ellipse cx="312" cy="212" rx="25" ry="28" fill="url(#eyeWhite)"/>
+      <g clip-path="url(#clipR)">
+        <circle cx="328" cy="218" r="15" fill="url(#iris)"/>
+        <circle cx="332" cy="211" r="5" fill="#FFFFFF"/>
+        <circle cx="324" cy="225" r="2.2" fill="#FFFFFF" opacity="0.8"/>
+        <path d="M 282 178 L 342 178 L 342 206 Q 312 196 282 203 Z" fill="url(#lid)"/>
+      </g>
+      <path d="M 287 202 Q 312 195 337 205" stroke="#3A200D" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+
+      <!-- rosy cheeks -->
+      <ellipse cx="168" cy="268" rx="30" ry="18" fill="url(#blush)"/>
+      <ellipse cx="344" cy="268" rx="30" ry="18" fill="url(#blush)"/>
+
+      <!-- small innocent smile -->
+      <path d="M 222 280 Q 256 306 290 280" stroke="#5A2E10" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <path d="M 216 276 Q 220 280 223 281" stroke="#5A2E10" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M 296 276 Q 292 280 289 281" stroke="#5A2E10" stroke-width="4" fill="none" stroke-linecap="round"/>
+    </g>
+  </g>
+</svg>
